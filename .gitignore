@@ -5,3 +5,5 @@ coverage/
 .playwright-cli/
 output/playwright/
 output/imagegen/
+
+.vercel
