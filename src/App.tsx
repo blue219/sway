@@ -6,7 +6,7 @@ import { MovementScreen } from './components/MovementScreen'
 import { PauseDialog } from './components/PauseDialog'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
-import { createRandomMovementOrder, getTreeStage, movements, quiz, scoreQuiz, type PlayMode } from './game'
+import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, type PlayMode } from './game'
 
 type Screen = 'mode-select' | 'movement' | 'quiz' | 'result'
 const holdSeconds = 5
@@ -16,6 +16,11 @@ function App() {
   const [mode, setMode] = useState<PlayMode>('seated')
   const [movementIndex, setMovementIndex] = useState(0)
   const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.seated.length))
+  const [quizOrder, setQuizOrder] = useState(() => createRandomQuizOrder(quizQuestions.length))
+  const [quizQuestionIndex, setQuizQuestionIndex] = useState(0)
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+  const [isShowingAnswer, setIsShowingAnswer] = useState(false)
+  const [correctAnswers, setCorrectAnswers] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [secondsRemaining, setSecondsRemaining] = useState(holdSeconds)
@@ -34,6 +39,26 @@ function App() {
   }, [isHolding, isPaused, secondsRemaining])
 
   useEffect(() => {
+    if (!isShowingAnswer) {
+      return undefined
+    }
+
+    const answerTimer = window.setTimeout(() => {
+      if (quizQuestionIndex === questionsPerRound - 1) {
+        setPoints(scoreQuiz(correctAnswers))
+        setScreen('result')
+        return
+      }
+
+      setQuizQuestionIndex((index) => index + 1)
+      setSelectedAnswer(null)
+      setIsShowingAnswer(false)
+    }, 1_000)
+
+    return () => window.clearTimeout(answerTimer)
+  }, [correctAnswers, isShowingAnswer, quizQuestionIndex])
+
+  useEffect(() => {
     if (isHolding && !isPaused && secondsRemaining === 0) {
       nextMovement()
     }
@@ -42,6 +67,11 @@ function App() {
   function resetRound(nextMode = mode) {
     setMovementIndex(0)
     setMovementOrder(createRandomMovementOrder(movements[nextMode].length))
+    setQuizOrder(createRandomQuizOrder(quizQuestions.length))
+    setQuizQuestionIndex(0)
+    setSelectedAnswer(null)
+    setIsShowingAnswer(false)
+    setCorrectAnswers(0)
     setIsHolding(false)
     setIsPaused(false)
     setSecondsRemaining(holdSeconds)
@@ -71,8 +101,22 @@ function App() {
   }
 
   function answerQuiz(answer: string) {
-    setPoints(scoreQuiz(movements[mode].length, answer === quiz.correctAnswer))
-    setScreen('result')
+    if (isShowingAnswer) {
+      return
+    }
+
+    setSelectedAnswer(answer)
+    setIsShowingAnswer(true)
+
+    if (answer === activeQuiz.correctAnswer) {
+      setCorrectAnswers((count) => count + 1)
+    }
+  }
+
+  function openQuiz() {
+    setIsHolding(false)
+    setIsPaused(false)
+    setScreen('quiz')
   }
 
   function finishRound() {
@@ -87,18 +131,19 @@ function App() {
 
   const treeStage = getTreeStage(points)
   const activeMovements = movements[mode]
+  const activeQuiz = quizQuestions[quizOrder[quizQuestionIndex]]
   const roundPreview = screen === 'movement' ? (
-    <div className="round-preview quiz-header-preview">
+    <button aria-label="Open quiz" className="round-preview quiz-header-preview" type="button" onClick={openQuiz}>
       <img alt="A tūī bird, the quiz subject" src="/assets/tui.png" />
       <div>
         <span>Coming up</span>
         <strong>Quiz after 5 movements</strong>
       </div>
-    </div>
+    </button>
   ) : screen === 'quiz' ? (
     <div className="round-preview movement-header-preview">
-      <span>5 movements complete</span>
-      <strong>Your movement round is done</strong>
+      <span>Question {quizQuestionIndex + 1} of {questionsPerRound}</span>
+      <strong>Choose your answer</strong>
     </div>
   ) : undefined
 
@@ -118,8 +163,8 @@ function App() {
             onStart={startHold}
           />
         ) : null}
-        {screen === 'quiz' ? <QuizScreen onAnswer={answerQuiz} /> : null}
-        {screen === 'result' ? <ResultScreen points={points} treeStage={treeStage} onFinish={finishRound} onPlayAgain={playAgain} /> : null}
+        {screen === 'quiz' ? <QuizScreen currentQuestion={quizQuestionIndex + 1} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
+        {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalQuestions={questionsPerRound} treeStage={treeStage} onFinish={finishRound} onPlayAgain={playAgain} /> : null}
         {screen === 'movement' && isPaused ? <PauseDialog onEnd={finishRound} onResume={() => setIsPaused(false)} /> : null}
       </div>
     </Cursor>

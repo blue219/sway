@@ -1,6 +1,6 @@
 # Whakakori Together
 
-Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. A single round supports seated or standing participation, five gentle movements, one multiple-choice question, and a session-only wellbeing tree reward.
+Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. A single round supports seated or standing participation, five gentle movements, five multiple-choice questions, and a session-only wellbeing tree reward.
 
 ## Local startup
 
@@ -25,16 +25,18 @@ pnpm build
 
 - Choose Seated mode or Standing mode with mouse, touch, keyboard Tab, Enter, or Space.
 - During the first movement, select **Start** to begin a five-second hold. Each following movement begins its hold automatically, and all five movements are chosen in a new random order.
-- The upcoming quiz is shown in the header during movements. After the fifth movement, the movement status moves to the header and the quiz is the only main-screen module.
+- The upcoming quiz is shown in the header during movements. After the fifth movement, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
+- Select the header quiz preview at any time during the movement round to open the quiz directly.
 - Select **Pause** at any point to freeze the timer.
-- On the quiz, use Up/Down or Left/Right to choose an answer; the choice completes the question.
+- On the quiz, use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
+- Each correct answer earns 10 Wellbeing Points, for a maximum of 50 points per round.
 - The UI uses large controls, visible keyboard focus, high contrast, responsive layouts, and reduced motion preferences.
 
 ## Prototype boundaries
 
 - Scores and tree state are held only for the current round and reset after finishing or refreshing.
 - There is no pose detection, camera input, medical guidance, account system, analytics, or facilitator dashboard.
-- The included Tūī question is a demonstration item. Any future te reo Māori or community-specific content must be reviewed by fluent speakers and community partners before use.
+- The 15-question demonstration bank includes six illustrated and nine text-only questions about te reo Māori, community, welcome customs, food, art and taonga. Any future te reo Māori or community-specific content must be reviewed by fluent speakers and community partners before use.
 
 ## Third-party licence
 

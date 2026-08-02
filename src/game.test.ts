@@ -1,20 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { createRandomMovementOrder, getTreeStage, scoreQuiz } from './game'
+import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, questionsPerRound, quizQuestions, scoreQuiz } from './game'
 
 describe('round rewards', () => {
-  it('awards 30 points for five movements and a correct quiz answer', () => {
-    expect(scoreQuiz(5, true)).toBe(30)
+  it('awards 10 points for each correct quiz answer', () => {
+    expect(scoreQuiz(1)).toBe(10)
   })
 
-  it('awards 25 points for five movements and an incorrect quiz answer', () => {
-    expect(scoreQuiz(5, false)).toBe(25)
+  it('awards 50 points for five correct answers', () => {
+    expect(scoreQuiz(5)).toBe(50)
   })
 
-  it('maps a completed correct round to the Growing Tree stage', () => {
-    expect(getTreeStage(30).name).toBe('Growing Tree')
+  it('maps a perfect round to the Flourishing Tree stage', () => {
+    expect(getTreeStage(50).name).toBe('Flourishing Tree')
   })
 
   it('shuffles the movement order without repeating an action', () => {
     expect(createRandomMovementOrder(5, () => 0)).toEqual([1, 2, 3, 4, 0])
+  })
+
+  it('creates a shuffled quiz order without repeated questions', () => {
+    const questionOrder = createRandomQuizOrder(quizQuestions.length, () => 0)
+
+    expect(new Set(questionOrder.slice(0, questionsPerRound))).toHaveLength(questionsPerRound)
+  })
+
+  it('includes 15 Māori culture questions with six illustrations', () => {
+    expect(quizQuestions).toHaveLength(15)
+    expect(quizQuestions.filter((question) => question.image)).toHaveLength(6)
   })
 })
