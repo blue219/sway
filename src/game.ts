@@ -27,11 +27,11 @@ const pointsPerCorrectAnswer = 10
 
 export const movements: Record<PlayMode, Movement[]> = {
   seated: [
-    { title: 'Raise one arm', guidance: 'Lift one arm only as far as feels comfortable.', focus: 'Keep your shoulders soft.', illustration: '/assets/seated-raise.png' },
-    { title: 'Open your chest', guidance: 'Gently draw your shoulders back while sitting tall.', focus: 'Keep both feet supported.', illustration: '/assets/seated-raise.png' },
-    { title: 'Turn and look', guidance: 'Turn your upper body a small amount to one side.', focus: 'Move slowly and breathe easily.', illustration: '/assets/seated-raise.png' },
-    { title: 'Reach forward', guidance: 'Reach both hands forward, keeping your feet supported.', focus: 'Stay comfortably upright.', illustration: '/assets/seated-raise.png' },
-    { title: 'Lift one knee', guidance: 'Lift one knee a little, or simply press your foot into the floor.', focus: 'Choose the height that feels right.', illustration: '/assets/seated-raise.png' },
+    { title: 'Knee lift and reach', guidance: 'Lift one knee a little and reach your other arm out to the side.', focus: 'Choose a height that feels steady.', illustration: '/assets/seated-knee-lift-reach.png' },
+    { title: 'Pull down strong', guidance: 'Draw both elbows down towards your ribs and open your chest.', focus: 'Keep your shoulders relaxed.', illustration: '/assets/seated-pull-down.png' },
+    { title: 'Reach for the sky', guidance: 'Reach both hands up and diagonally to one side.', focus: 'Keep both feet supported.', illustration: '/assets/seated-sky-reach.png' },
+    { title: 'Double punch', guidance: 'Gently punch both hands forward at shoulder height.', focus: 'Move with control, not speed.', illustration: '/assets/seated-double-punch.png' },
+    { title: 'Side stretch', guidance: 'Reach one arm overhead and lean gently to the side.', focus: 'Stay comfortably upright.', illustration: '/assets/seated-side-bend.png' },
   ],
   standing: [
     { title: 'High-knee march', guidance: 'Lift one knee to a height that feels steady, then switch sides.', focus: 'Stand tall through your supporting leg.', illustration: '/assets/standing-high-knee.png' },

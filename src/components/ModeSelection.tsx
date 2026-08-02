@@ -15,7 +15,7 @@ export function ModeSelection({ onSelect }: ModeSelectionProps) {
       <div className="mode-options">
         <Card className="mode-card" color="app-green" pattern="app-green">
           <div className="mode-illustration">
-            <img alt="An older adult sitting comfortably on a chair" src="/assets/seated-raise.png" />
+            <img alt="An older adult demonstrating a seated movement" src="/assets/seated-sky-reach.png" />
           </div>
           <h2>Seated mode</h2>
           <p>Gentle movements with a chair.</p>
