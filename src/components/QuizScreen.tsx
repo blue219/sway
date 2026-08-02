@@ -26,7 +26,6 @@ export function QuizScreen({ onAnswer }: QuizScreenProps) {
           />
         </div>
       </Card>
-      <Card className="quiz-hint" color="app-yellow" pattern="app-yellow">Use arrow keys to choose an answer.</Card>
     </main>
   )
 }

@@ -8,27 +8,29 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
-  it('lets a player choose seated mode and complete a timed movement', () => {
+  it('continues timing automatically after moving to the next pose', () => {
     vi.useFakeTimers()
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Seated mode' }))
-    expect(screen.getByRole('heading', { name: 'Raise one arm' })).toBeInTheDocument()
+    const firstMovement = screen.getByRole('heading', { level: 1 }).textContent
+    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'I’m ready' }))
-    expect(screen.getByText('Hold for 4 seconds')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    expect(screen.getByText('Hold for 5 seconds')).toBeInTheDocument()
 
-    act(() => vi.advanceTimersByTime(4_000))
+    act(() => vi.advanceTimersByTime(5_000))
 
-    expect(screen.getByText('Movement complete')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Next movement' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(firstMovement)
+    expect(screen.getByRole('button', { name: 'Holding' })).toBeDisabled()
+    expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
   })
 
   it('freezes the hold timer while paused and resumes it when asked', () => {
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Standing mode' }))
-    fireEvent.click(screen.getByRole('button', { name: 'I’m ready' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
 
     expect(screen.getByRole('dialog', { name: 'Paused' })).toBeInTheDocument()
@@ -37,16 +39,33 @@ describe('Whakakori Together round', () => {
     expect(screen.queryByRole('dialog', { name: 'Paused' })).not.toBeInTheDocument()
   })
 
+  it('uses every standing movement once in a random order before opening the quiz', () => {
+    vi.useFakeTimers()
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Standing mode' }))
+
+    const completedMovements = new Set<string>()
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    for (let movement = 0; movement < 5; movement += 1) {
+      completedMovements.add(screen.getByRole('heading', { level: 1 }).textContent ?? '')
+      act(() => vi.advanceTimersByTime(5_000))
+    }
+
+    expect(completedMovements).toHaveLength(5)
+    expect(screen.getByRole('heading', { name: 'What bird is shown?' })).toBeInTheDocument()
+    expect(screen.getByText('5 movements complete')).toBeInTheDocument()
+  })
+
   it('accepts arrow-key quiz selection and returns to the mode selection after finishing', () => {
     vi.useFakeTimers()
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Seated mode' }))
 
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     for (let movement = 0; movement < 5; movement += 1) {
-      fireEvent.click(screen.getByRole('button', { name: 'I’m ready' }))
-      act(() => vi.advanceTimersByTime(4_000))
-      fireEvent.click(screen.getByRole('button', { name: 'Next movement' }))
+      act(() => vi.advanceTimersByTime(5_000))
     }
 
     const firstOption = screen.getByRole('radio', { name: 'A. Kiwi' })

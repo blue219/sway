@@ -4,3 +4,4 @@ coverage/
 *.local
 .playwright-cli/
 output/playwright/
+output/imagegen/

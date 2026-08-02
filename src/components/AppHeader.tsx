@@ -1,14 +1,16 @@
 import { Card, Progress } from 'animal-island-ui'
+import type { ReactNode } from 'react'
 import type { TreeStage } from '../game'
 
 type AppHeaderProps = {
   points: number
   treeStage: TreeStage
+  roundPreview?: ReactNode
 }
 
 const stageNames = ['Seed', 'Sprout', 'Young Tree', 'Growing Tree', 'Flourishing Tree']
 
-export function AppHeader({ points, treeStage }: AppHeaderProps) {
+export function AppHeader({ points, treeStage, roundPreview }: AppHeaderProps) {
   const currentStage = stageNames.indexOf(treeStage.name)
   const progress = (currentStage / (stageNames.length - 1)) * 100
 
@@ -22,6 +24,7 @@ export function AppHeader({ points, treeStage }: AppHeaderProps) {
         </svg>
         <span>Whakakori Together</span>
       </div>
+      {roundPreview ? <div className="header-round-preview">{roundPreview}</div> : null}
       <div className="header-status" aria-label={`${points} Wellbeing Points, ${treeStage.name}`}>
         <Card className="status-card" color="app-yellow">
           <span className="status-label">Wellbeing Points</span>

@@ -25,10 +25,10 @@ export function ModeSelection({ onSelect }: ModeSelectionProps) {
         </Card>
         <Card className="mode-card" color="app-yellow" pattern="app-yellow">
           <div className="mode-illustration">
-            <img alt="An older adult standing beside a chair for support" src="/assets/standing-raise.png" />
+            <img alt="An older adult demonstrating a standing high-knee march" src="/assets/standing-high-knee.png" />
           </div>
           <h2>Standing mode</h2>
-          <p>Gentle movements with chair support nearby.</p>
+          <p>Dynamic, no-equipment movements to build your challenge.</p>
           <Button block className="primary-action" htmlType="button" size="large" type="primary" onClick={() => onSelect('standing')}>
             Standing mode
           </Button>

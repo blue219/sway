@@ -6,17 +6,19 @@ import { MovementScreen } from './components/MovementScreen'
 import { PauseDialog } from './components/PauseDialog'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
-import { getTreeStage, movements, quiz, scoreQuiz, type PlayMode } from './game'
+import { createRandomMovementOrder, getTreeStage, movements, quiz, scoreQuiz, type PlayMode } from './game'
 
 type Screen = 'mode-select' | 'movement' | 'quiz' | 'result'
+const holdSeconds = 5
 
 function App() {
   const [screen, setScreen] = useState<Screen>('mode-select')
   const [mode, setMode] = useState<PlayMode>('seated')
   const [movementIndex, setMovementIndex] = useState(0)
+  const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.seated.length))
   const [isHolding, setIsHolding] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [secondsRemaining, setSecondsRemaining] = useState(4)
+  const [secondsRemaining, setSecondsRemaining] = useState(holdSeconds)
   const [points, setPoints] = useState(0)
 
   useEffect(() => {
@@ -31,22 +33,29 @@ function App() {
     return () => window.clearInterval(timer)
   }, [isHolding, isPaused, secondsRemaining])
 
-  function resetRound() {
+  useEffect(() => {
+    if (isHolding && !isPaused && secondsRemaining === 0) {
+      nextMovement()
+    }
+  }, [isHolding, isPaused, secondsRemaining])
+
+  function resetRound(nextMode = mode) {
     setMovementIndex(0)
+    setMovementOrder(createRandomMovementOrder(movements[nextMode].length))
     setIsHolding(false)
     setIsPaused(false)
-    setSecondsRemaining(4)
+    setSecondsRemaining(holdSeconds)
     setPoints(0)
   }
 
   function chooseMode(nextMode: PlayMode) {
-    resetRound()
+    resetRound(nextMode)
     setMode(nextMode)
     setScreen('movement')
   }
 
   function startHold() {
-    setSecondsRemaining(4)
+    setSecondsRemaining(holdSeconds)
     setIsHolding(true)
   }
 
@@ -58,8 +67,7 @@ function App() {
     }
 
     setMovementIndex((index) => index + 1)
-    setSecondsRemaining(4)
-    setIsHolding(false)
+    setSecondsRemaining(holdSeconds)
   }
 
   function answerQuiz(answer: string) {
@@ -78,20 +86,34 @@ function App() {
   }
 
   const treeStage = getTreeStage(points)
+  const activeMovements = movements[mode]
+  const roundPreview = screen === 'movement' ? (
+    <div className="round-preview quiz-header-preview">
+      <img alt="A tūī bird, the quiz subject" src="/assets/tui.png" />
+      <div>
+        <span>Coming up</span>
+        <strong>Quiz after 5 movements</strong>
+      </div>
+    </div>
+  ) : screen === 'quiz' ? (
+    <div className="round-preview movement-header-preview">
+      <span>5 movements complete</span>
+      <strong>Your movement round is done</strong>
+    </div>
+  ) : undefined
 
   return (
     <Cursor>
       <div className="app-shell">
-        <AppHeader points={points} treeStage={treeStage} />
+        <AppHeader points={points} roundPreview={roundPreview} treeStage={treeStage} />
         {screen === 'mode-select' ? <ModeSelection onSelect={chooseMode} /> : null}
         {screen === 'movement' ? (
           <MovementScreen
+            currentMovement={movementIndex + 1}
             isHolding={isHolding}
-            mode={mode}
-            movement={movements[mode][movementIndex]}
-            movementIndex={movementIndex}
+            movement={activeMovements[movementOrder[movementIndex]]}
             secondsRemaining={secondsRemaining}
-            onNext={nextMovement}
+            totalMovements={activeMovements.length}
             onPause={() => setIsPaused(true)}
             onStart={startHold}
           />

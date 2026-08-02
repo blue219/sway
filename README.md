@@ -24,9 +24,10 @@ pnpm build
 ## Interaction and accessibility
 
 - Choose Seated mode or Standing mode with mouse, touch, keyboard Tab, Enter, or Space.
-- During a movement, select **I’m ready** to start a four-second hold. The player advances manually after the hold completes.
+- During the first movement, select **Start** to begin a five-second hold. Each following movement begins its hold automatically, and all five movements are chosen in a new random order.
+- The upcoming quiz is shown in the header during movements. After the fifth movement, the movement status moves to the header and the quiz is the only main-screen module.
 - Select **Pause** at any point to freeze the timer.
-- On the quiz, use Up/Down or Left/Right to move between answers, then press Enter or Space to answer.
+- On the quiz, use Up/Down or Left/Right to choose an answer; the choice completes the question.
 - The UI uses large controls, visible keyboard focus, high contrast, responsive layouts, and reduced motion preferences.
 
 ## Prototype boundaries
