@@ -13,7 +13,7 @@
 
 ## Repository structure
 - Using animal-island-ui style when modify front-end code
-- Create a transparent-background PNG illustration for a gentle exercise app:
+- Follow the rules when generate movements pngs:
     - Canvas: exactly 1024 × 1536 px, portrait.
     - Subject: one full-body older adult demonstrating [ACTION].
     - Composition: centered, complete head, hands, and feet visible; no cropping.
