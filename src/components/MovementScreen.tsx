@@ -1,5 +1,6 @@
 import { Button, Card } from 'animal-island-ui'
 import type { Movement } from '../game'
+import { StandingMarchCharacter } from './StandingMarchCharacter'
 
 type MovementScreenProps = {
   currentMovement: number
@@ -20,8 +21,6 @@ export function MovementScreen({
   onPause,
   onStart,
 }: MovementScreenProps) {
-  const figure = movement.illustration
-
   return (
     <main className="screen movement-screen">
       <Card className="movement-card" color="app-blue" pattern="app-blue" aria-labelledby="movement-title">
@@ -33,7 +32,7 @@ export function MovementScreen({
           <h1 id="movement-title">{movement.title}</h1>
         </div>
         <div className="movement-figure">
-          <img alt={`An older adult demonstrating ${movement.title.toLowerCase()}`} src={figure} />
+          <StandingMarchCharacter label={`An older adult demonstrating ${movement.title.toLowerCase()}`} />
         </div>
         <div aria-live="polite" className="countdown">
           <strong>{isHolding ? secondsRemaining : 5}</strong>

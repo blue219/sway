@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, questionsPerRound, quizQuestions, scoreQuiz } from './game'
+import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
 
 describe('round rewards', () => {
   it('awards 10 points for each correct quiz answer', () => {
@@ -16,6 +16,14 @@ describe('round rewards', () => {
 
   it('shuffles the movement order without repeating an action', () => {
     expect(createRandomMovementOrder(5, () => 0)).toEqual([1, 2, 3, 4, 0])
+  })
+
+  it('uses one animated standing march per round', () => {
+    expect(movements).toEqual([
+      expect.objectContaining({
+        title: 'Standing March',
+      }),
+    ])
   })
 
   it('creates a shuffled quiz order without repeated questions', () => {

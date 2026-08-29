@@ -1,5 +1,3 @@
-export type PlayMode = 'seated' | 'standing'
-
 export type TreeStage = {
   name: 'Seed' | 'Sprout' | 'Young Tree' | 'Growing Tree' | 'Flourishing Tree'
   minimumPoints: number
@@ -9,7 +7,6 @@ export type Movement = {
   title: string
   guidance: string
   focus: string
-  illustration: string
 }
 
 export type QuizQuestion = {
@@ -25,22 +22,13 @@ export type QuizQuestion = {
 export const questionsPerRound = 5
 const pointsPerCorrectAnswer = 10
 
-export const movements: Record<PlayMode, Movement[]> = {
-  seated: [
-    { title: 'Knee lift and reach', guidance: 'Lift one knee a little and reach your other arm out to the side.', focus: 'Choose a height that feels steady.', illustration: '/assets/seated-knee-lift-reach.png' },
-    { title: 'Pull down strong', guidance: 'Draw both elbows down towards your ribs and open your chest.', focus: 'Keep your shoulders relaxed.', illustration: '/assets/seated-pull-down.png' },
-    { title: 'Reach for the sky', guidance: 'Reach both hands up and diagonally to one side.', focus: 'Keep both feet supported.', illustration: '/assets/seated-sky-reach.png' },
-    { title: 'Double punch', guidance: 'Gently punch both hands forward at shoulder height.', focus: 'Move with control, not speed.', illustration: '/assets/seated-double-punch.png' },
-    { title: 'Side stretch', guidance: 'Reach one arm overhead and lean gently to the side.', focus: 'Stay comfortably upright.', illustration: '/assets/seated-side-bend.png' },
-  ],
-  standing: [
-    { title: 'High-knee march', guidance: 'Lift one knee to a height that feels steady, then switch sides.', focus: 'Stand tall through your supporting leg.', illustration: '/assets/standing-high-knee.png' },
-    { title: 'Side leg lift', guidance: 'Lift one leg out to the side while keeping both hips facing forward.', focus: 'Stretch your arms wide for balance.', illustration: '/assets/standing-side-leg.png' },
-    { title: 'Mini squat', guidance: 'Bend your knees and sit your hips back a little, then stand tall again.', focus: 'Keep your heels grounded.', illustration: '/assets/standing-mini-squat.png' },
-    { title: 'Cross-body knee reach', guidance: 'Lift one knee and reach the opposite hand towards it, then switch sides.', focus: 'Move with control, not speed.', illustration: '/assets/standing-cross-body.png' },
-    { title: 'Full-body reach', guidance: 'Reach both arms high overhead and grow as tall as you comfortably can.', focus: 'Keep your chest open and gaze forward.', illustration: '/assets/standing-full-body-reach.png' },
-  ],
-}
+export const movements: Movement[] = [
+  {
+    title: 'Standing March',
+    guidance: 'Gently lift one knee at a time while keeping a steady rhythm.',
+    focus: 'Keep your torso tall and use a comfortable step height.',
+  },
+]
 
 export function createRandomMovementOrder(count: number, random = Math.random): number[] {
   const order = Array.from({ length: count }, (_, index) => index)

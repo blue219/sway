@@ -5,6 +5,7 @@ coverage/
 .playwright-cli/
 output/playwright/
 output/imagegen/
-tmp/imagegen/
+tmp/
+.img2threejs/
 
 .vercel

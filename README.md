@@ -1,6 +1,6 @@
 # Whakakori Together
 
-Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. A single round supports seated or standing participation, five gentle movements, five multiple-choice questions, and a session-only wellbeing tree reward.
+Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. A round starts with a real-time procedural 3D standing march, followed by five multiple-choice questions and a session-only wellbeing tree reward.
 
 ## Local startup
 
@@ -23,9 +23,9 @@ pnpm build
 
 ## Interaction and accessibility
 
-- Choose Seated mode or Standing mode with mouse, touch, keyboard Tab, Enter, or Space.
-- During the first movement, select **Start** to begin a five-second hold. Each following movement begins its hold automatically, and all five movements are chosen in a new random order.
-- The upcoming quiz is shown in the header during movements. After the fifth movement, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
+- The round opens on the Standing March animation. Select **Start** to begin its five-second hold.
+- The movement demonstrator is a responsive Three.js character reconstructed as a stylized approximation from the approved front-view reference. Unseen side and rear details are inferred rather than exact.
+- The upcoming quiz is shown in the header during the movement. After the movement, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - Select the header quiz preview at any time during the movement round to open the quiz directly.
 - Select **Pause** at any point to freeze the timer.
 - On the quiz, use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.

@@ -42,18 +42,10 @@ h1, h2 { color: #725d42; }
 h1 { margin-bottom: 16px; font-size: clamp(2.35rem, 5vw, 4.75rem); line-height: 1; letter-spacing: -.055em; }
 h2 { margin-bottom: 10px; font-size: clamp(1.45rem, 2.3vw, 2.15rem); line-height: 1.1; letter-spacing: -.03em; }
 .primary-action, .secondary-action { min-height: 58px; font-size: clamp(1.05rem, 1.6vw, 1.35rem); font-weight: 800; }
-.mode-screen, .quiz-screen, .result-screen { display: grid; align-content: center; gap: clamp(22px, 4vw, 42px); }
+.quiz-screen, .result-screen { display: grid; align-content: center; gap: clamp(22px, 4vw, 42px); }
 .result-screen { overflow-y: auto; }
 .welcome-copy { max-width: 720px; }
 .welcome-copy > p:last-child, .guidance, .comfortable-note, .result-message { font-size: clamp(1.15rem, 2vw, 1.55rem); line-height: 1.5; }
-.mode-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-.mode-card { display: grid; grid-template-columns: 160px 1fr; grid-template-areas: "art title" "art body" "art action"; column-gap: 24px; align-items: center; min-height: 300px; }
-.mode-illustration { display: grid; grid-area: art; place-items: center; height: 100%; overflow: hidden; }
-.mode-illustration img { width: 100%; height: 200px; object-fit: contain; }
-.mode-card h2 { grid-area: title; align-self: end; }
-.mode-card p { grid-area: body; margin-bottom: 18px; font-size: 1.05rem; line-height: 1.45; }
-.mode-card .primary-action { grid-area: action; align-self: start; }
-.safety-note { max-width: 680px; margin: 0; color: #3a6b5a; font-weight: 800; }
 
 .movement-screen { display: grid; align-items: stretch; padding: clamp(20px, 3vw, 48px) clamp(24px, 5vw, 80px); }
 .movement-card { position: relative; display: grid; grid-template-columns: minmax(310px, .65fr) minmax(470px, 1.35fr); grid-template-areas: "copy figure" "timer figure"; grid-template-rows: auto 1fr; align-items: center; gap: 18px 34px; min-height: 0; height: 100%; padding: clamp(20px, 2.5vw, 36px); color: #4a5a8a; }
@@ -62,7 +54,8 @@ h2 { margin-bottom: 10px; font-size: clamp(1.45rem, 2.3vw, 2.15rem); line-height
 .movement-copy { position: relative; z-index: 1; display: grid; grid-area: copy; align-self: start; max-width: 520px; }
 .movement-copy h1 { margin: 0; color: #725d42; font-size: clamp(3.6rem, 6.1vw, 6.5rem); line-height: .92; letter-spacing: -.065em; }
 .movement-figure { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; min-height: 0; pointer-events: none; }
-.movement-figure > img { width: 100%; height: min(76vh, 720px); max-width: 920px; object-fit: contain; transform: scale(1.2); }
+.standing-march-character { width: min(100%, 920px); height: min(76vh, 720px); }
+.standing-march-character canvas { display: block; width: 100%; height: 100%; }
 .countdown { position: relative; z-index: 1; display: grid; grid-area: timer; place-items: center; justify-self: start; width: min(100%, 250px); aspect-ratio: 1; padding: 18px; text-align: center; border: 9px solid #889df0; border-radius: 50%; background: #f7f3df; }
 .countdown strong { display: block; color: #4a5a8a; font-size: clamp(5rem, 8vw, 8.5rem); line-height: .8; }
 .countdown span { margin-top: 14px; color: #4a5a8a; font-size: clamp(1.2rem, 1.8vw, 1.65rem); font-weight: 900; line-height: 1.2; }
@@ -95,6 +88,6 @@ h2 { margin-bottom: 10px; font-size: clamp(1.45rem, 2.3vw, 2.15rem); line-height
 .tree-illustration p { margin: 0; color: #3a6b3a; font-size: 1.2rem; font-weight: 800; }
 .community-note { padding: 22px; font-size: clamp(1.15rem, 2vw, 1.55rem); font-weight: 800; text-align: center; }
 
-@media (max-width: 980px) { .app-shell { height: auto; min-height: 100dvh; overflow: visible; } .app-header { position: sticky; top: 0; z-index: 2; align-items: stretch; flex-wrap: wrap; } .header-round-preview { order: 3; width: 100%; max-width: none; } .header-status { margin-left: auto; } .movement-screen { padding: 28px; } .movement-card { grid-template-columns: minmax(260px, .7fr) minmax(330px, 1.3fr); } .movement-figure > img { height: min(68vh, 720px); max-width: 720px; transform: none; } .countdown { width: min(100%, 230px); } }
-@media (max-width: 720px) { .app-header { padding: 12px 16px; } .brand { font-size: 1.15rem; white-space: normal; } .header-status { display: grid; grid-template-columns: .75fr 1.25fr; width: 100%; } .status-card, .tree-status { min-width: 0; padding: 8px; } .screen { min-height: calc(100dvh - 190px); padding: 22px 16px; } .mode-options, .quiz-panel, .result-panel { grid-template-columns: 1fr; } .mode-card { grid-template-columns: 100px 1fr; grid-template-areas: "art title" "art body" "action action"; min-height: 0; } .mode-illustration img { height: 120px; } .movement-screen { padding: 22px 18px 34px; } .movement-card { grid-template-columns: 1fr; grid-template-areas: "copy" "timer" "figure" "actions"; gap: 26px; /* Let long titles expand the card so controls remain inside its border. */ height: auto; min-height: 100%; } .movement-copy h1 { font-size: clamp(3rem, 14vw, 4.8rem); } .movement-figure { position: static; grid-area: figure; pointer-events: auto; } .movement-figure > img { height: min(56vh, 520px); } .countdown { width: min(100%, 230px); border-width: 8px; } .movement-actions, .dialog-actions, .result-actions { grid-template-columns: 1fr; } .movement-actions { position: static; justify-self: stretch; width: auto; max-width: none; } .movement-actions .primary-action, .movement-actions .secondary-action { min-height: 74px; font-size: 1.5rem; } .quiz-image-wrap img { max-width: 250px; } }
+@media (max-width: 980px) { .app-shell { height: auto; min-height: 100dvh; overflow: visible; } .app-header { position: sticky; top: 0; z-index: 2; align-items: stretch; flex-wrap: wrap; } .header-round-preview { order: 3; width: 100%; max-width: none; } .header-status { margin-left: auto; } .movement-screen { padding: 28px; } .movement-card { grid-template-columns: minmax(260px, .7fr) minmax(330px, 1.3fr); } .standing-march-character { width: min(100%, 720px); height: min(68vh, 720px); transform: none; } .countdown { width: min(100%, 230px); } }
+@media (max-width: 720px) { .app-header { padding: 12px 16px; } .brand { font-size: 1.15rem; white-space: normal; } .header-status { display: grid; grid-template-columns: .75fr 1.25fr; width: 100%; } .status-card, .tree-status { min-width: 0; padding: 8px; } .screen { min-height: calc(100dvh - 190px); padding: 22px 16px; } .quiz-panel, .result-panel { grid-template-columns: 1fr; } .movement-screen { padding: 22px 18px 34px; } .movement-card { grid-template-columns: 1fr; grid-template-areas: "copy" "timer" "figure" "actions"; gap: 26px; /* Let long titles expand the card so controls remain inside its border. */ height: auto; min-height: 100%; } .movement-copy h1 { font-size: clamp(3rem, 14vw, 4.8rem); } .movement-figure { position: static; grid-area: figure; pointer-events: auto; } .standing-march-character { height: min(56vh, 520px); } .countdown { width: min(100%, 230px); border-width: 8px; } .movement-actions, .dialog-actions, .result-actions { grid-template-columns: 1fr; } .movement-actions { position: static; justify-self: stretch; width: auto; max-width: none; } .movement-actions .primary-action, .movement-actions .secondary-action { min-height: 74px; font-size: 1.5rem; } .quiz-image-wrap img { max-width: 250px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

@@ -1,21 +1,19 @@
 import { Cursor } from 'animal-island-ui'
 import { useEffect, useState } from 'react'
 import { AppHeader } from './components/AppHeader'
-import { ModeSelection } from './components/ModeSelection'
 import { MovementScreen } from './components/MovementScreen'
 import { PauseDialog } from './components/PauseDialog'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
-import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, type PlayMode } from './game'
+import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
 
-type Screen = 'mode-select' | 'movement' | 'quiz' | 'result'
+type Screen = 'movement' | 'quiz' | 'result'
 const holdSeconds = 5
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('mode-select')
-  const [mode, setMode] = useState<PlayMode>('seated')
+  const [screen, setScreen] = useState<Screen>('movement')
   const [movementIndex, setMovementIndex] = useState(0)
-  const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.seated.length))
+  const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.length))
   const [quizOrder, setQuizOrder] = useState(() => createRandomQuizOrder(quizQuestions.length))
   const [quizQuestionIndex, setQuizQuestionIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
@@ -64,9 +62,9 @@ function App() {
     }
   }, [isHolding, isPaused, secondsRemaining])
 
-  function resetRound(nextMode = mode) {
+  function resetRound() {
     setMovementIndex(0)
-    setMovementOrder(createRandomMovementOrder(movements[nextMode].length))
+    setMovementOrder(createRandomMovementOrder(movements.length))
     setQuizOrder(createRandomQuizOrder(quizQuestions.length))
     setQuizQuestionIndex(0)
     setSelectedAnswer(null)
@@ -78,19 +76,13 @@ function App() {
     setPoints(0)
   }
 
-  function chooseMode(nextMode: PlayMode) {
-    resetRound(nextMode)
-    setMode(nextMode)
-    setScreen('movement')
-  }
-
   function startHold() {
     setSecondsRemaining(holdSeconds)
     setIsHolding(true)
   }
 
   function nextMovement() {
-    if (movementIndex === movements[mode].length - 1) {
+    if (movementIndex === movements.length - 1) {
       setIsHolding(false)
       setScreen('quiz')
       return
@@ -121,7 +113,7 @@ function App() {
 
   function finishRound() {
     resetRound()
-    setScreen('mode-select')
+    setScreen('movement')
   }
 
   function playAgain() {
@@ -130,14 +122,13 @@ function App() {
   }
 
   const treeStage = getTreeStage(points)
-  const activeMovements = movements[mode]
   const activeQuiz = quizQuestions[quizOrder[quizQuestionIndex]]
   const roundPreview = screen === 'movement' ? (
     <button aria-label="Open quiz" className="round-preview quiz-header-preview" type="button" onClick={openQuiz}>
       <img alt="A tūī bird, the quiz subject" src="/assets/tui.png" />
       <div>
         <span>Coming up</span>
-        <strong>Quiz after 5 movements</strong>
+        <strong>Quiz after {movements.length} movement</strong>
       </div>
     </button>
   ) : screen === 'quiz' ? (
@@ -151,14 +142,13 @@ function App() {
     <Cursor>
       <div className="app-shell">
         <AppHeader points={points} roundPreview={roundPreview} treeStage={treeStage} />
-        {screen === 'mode-select' ? <ModeSelection onSelect={chooseMode} /> : null}
         {screen === 'movement' ? (
           <MovementScreen
             currentMovement={movementIndex + 1}
             isHolding={isHolding}
-            movement={activeMovements[movementOrder[movementIndex]]}
+            movement={movements[movementOrder[movementIndex]]}
             secondsRemaining={secondsRemaining}
-            totalMovements={activeMovements.length}
+            totalMovements={movements.length}
             onPause={() => setIsPaused(true)}
             onStart={startHold}
           />
