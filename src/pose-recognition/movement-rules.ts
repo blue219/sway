@@ -1,4 +1,5 @@
 import type { Keypoint, Pose } from '@tensorflow-models/posenet'
+import type { MovementId } from './types'
 
 type Point = {
   x: number
@@ -417,4 +418,27 @@ export function evaluateRowing(pose: Pose): MovementRuleResult {
         }
       : undefined,
   }
+}
+
+type MovementRule = (pose: Pose) => MovementRuleResult
+
+const movementRuleById = {
+  'side-leg-move': evaluateSideLegMove,
+  'mini-squat': evaluateMiniSquat,
+  'cross-body-knee-reach': evaluateCrossBodyKneeReach,
+  'double-arm-raise': evaluateDoubleArmRaise,
+  'side-to-side-foot-tap': evaluateSideToSideFootTap,
+  'frontal-raise': evaluateFrontalRaise,
+  'knee-lift-extension': evaluateKneeLiftExtension,
+  'lateral-raise': evaluateLateralRaise,
+  'arm-above-head': evaluateArmAboveHead,
+  rowing: evaluateRowing,
+} satisfies Record<MovementId, MovementRule>
+
+/** Selects and evaluates the rule owned by a standard movement ID. */
+export function evaluateMovementRule(
+  pose: Pose,
+  targetMovement: MovementId,
+): MovementRuleResult {
+  return movementRuleById[targetMovement](pose)
 }

@@ -50,11 +50,13 @@ export interface PoseRecognizer {
 export type PoseRecognitionResult = {
     targetMovement: MovementId
     /** Raw confidence assigned to the target class by the TM classifier. */
-    targetConfidence: number
+    targetConfidence?: number
     /** Highest-confidence movement predicted by the model. */
-    detectedMovement: MovementId
-    detectedConfidence: number
+    detectedMovement?: MovementId
+    detectedConfidence?: number
     isMatching: boolean
+    /** Which stage made the final positive decision, or none when rejected. */
+    matchSource: 'rule' | 'model' | 'none'
     /** Movement-specific measurement, when a rule-based evaluator is used. */
     measurement?: {
       type:

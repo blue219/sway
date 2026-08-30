@@ -1,17 +1,5 @@
 import * as tmPose from '@teachablemachine/pose'
-import {
-  evaluateArmAboveHead,
-  evaluateCrossBodyKneeReach,
-  evaluateDoubleArmRaise,
-  evaluateFrontalRaise,
-  evaluateKneeLiftExtension,
-  evaluateLateralRaise,
-  evaluateMiniSquat,
-  evaluateRowing,
-  evaluateSideLegMove,
-  evaluateSideToSideFootTap,
-  type MovementRuleResult,
-} from './movement-rules'
+import { evaluateMovementRule } from './movement-rules'
 import {
   getMovementMode,
   getTeachableMachineLabels,
@@ -85,6 +73,18 @@ export class TeachableMachinePoseRecognizer implements PoseRecognizer {
 
     try {
       const { pose, posenetOutput } = await model.estimatePose(input)
+      const movementRule = evaluateMovementRule(pose, targetMovement)
+
+      if (movementRule.isMatching) {
+        return {
+          targetMovement,
+          isMatching: true,
+          matchSource: 'rule',
+          measurement: movementRule.measurement,
+          timestamp: performance.now(),
+        }
+      }
+
       const predictions = await model.predict(posenetOutput)
       const targetLabel = toTeachableMachineLabel(targetMovement)
       const targetPrediction = predictions.find(({ className }) => className === targetLabel)
@@ -100,37 +100,16 @@ export class TeachableMachinePoseRecognizer implements PoseRecognizer {
         throw new Error(`Model returned an unknown class: ${topPrediction.className}`)
       }
 
-      let movementRule: MovementRuleResult | undefined
-      if (targetMovement === 'mini-squat') {
-        movementRule = evaluateMiniSquat(pose)
-      } else if (targetMovement === 'side-leg-move') {
-        movementRule = evaluateSideLegMove(pose)
-      } else if (targetMovement === 'cross-body-knee-reach') {
-        movementRule = evaluateCrossBodyKneeReach(pose)
-      } else if (targetMovement === 'double-arm-raise') {
-        movementRule = evaluateDoubleArmRaise(pose)
-      } else if (targetMovement === 'side-to-side-foot-tap') {
-        movementRule = evaluateSideToSideFootTap(pose)
-      } else if (targetMovement === 'frontal-raise') {
-        movementRule = evaluateFrontalRaise(pose)
-      } else if (targetMovement === 'knee-lift-extension') {
-        movementRule = evaluateKneeLiftExtension(pose)
-      } else if (targetMovement === 'lateral-raise') {
-        movementRule = evaluateLateralRaise(pose)
-      } else if (targetMovement === 'arm-above-head') {
-        movementRule = evaluateArmAboveHead(pose)
-      } else if (targetMovement === 'rowing') {
-        movementRule = evaluateRowing(pose)
-      }
+      const modelMatches = targetPrediction.probability > this.confidenceThreshold
 
       return {
         targetMovement,
         targetConfidence: targetPrediction.probability,
         detectedMovement,
         detectedConfidence: topPrediction.probability,
-        isMatching: movementRule?.isMatching
-          ?? targetPrediction.probability > this.confidenceThreshold,
-        measurement: movementRule?.measurement,
+        isMatching: modelMatches,
+        matchSource: modelMatches ? 'model' : 'none',
+        measurement: movementRule.measurement,
         timestamp: performance.now(),
       }
     } catch (cause) {
