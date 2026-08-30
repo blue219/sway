@@ -73,6 +73,20 @@ export class TeachableMachinePoseRecognizer implements PoseRecognizer {
 
     try {
       const { pose, posenetOutput } = await model.estimatePose(input)
+
+      // The runtime library returns `undefined` when it cannot find a person in
+      // a frame, despite its type declaration always promising a Pose. Treat
+      // that as an ordinary rejected frame so a camera can stay running while
+      // the participant moves into view.
+      if (!pose) {
+        return {
+          targetMovement,
+          isMatching: false,
+          matchSource: 'none',
+          timestamp: performance.now(),
+        }
+      }
+
       const movementRule = evaluateMovementRule(pose, targetMovement)
 
       if (movementRule.isMatching) {
