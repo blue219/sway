@@ -57,7 +57,14 @@ export type PoseRecognitionResult = {
     isMatching: boolean
     /** Movement-specific measurement, when a rule-based evaluator is used. */
     measurement?: {
-      type: 'knee-angle'
+      type:
+        | 'knee-angle'
+        | 'leg-spread-angle'
+        | 'raised-foot-ratio'
+        | 'raised-hands-ratio'
+        | 'arm-torso-angle'
+        | 'elbow-angle'
+        | 'knee-extension-angle'
       value: number
       keypointConfidence: number
     }

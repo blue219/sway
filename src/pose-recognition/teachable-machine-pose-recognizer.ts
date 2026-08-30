@@ -1,5 +1,17 @@
 import * as tmPose from '@teachablemachine/pose'
-import { evaluateMiniSquat } from './movement-rules'
+import {
+  evaluateArmAboveHead,
+  evaluateCrossBodyKneeReach,
+  evaluateDoubleArmRaise,
+  evaluateFrontalRaise,
+  evaluateKneeLiftExtension,
+  evaluateLateralRaise,
+  evaluateMiniSquat,
+  evaluateRowing,
+  evaluateSideLegMove,
+  evaluateSideToSideFootTap,
+  type MovementRuleResult,
+} from './movement-rules'
 import {
   getMovementMode,
   getTeachableMachineLabels,
@@ -88,24 +100,37 @@ export class TeachableMachinePoseRecognizer implements PoseRecognizer {
         throw new Error(`Model returned an unknown class: ${topPrediction.className}`)
       }
 
-      const miniSquatRule = targetMovement === 'mini-squat'
-        ? evaluateMiniSquat(pose)
-        : undefined
+      let movementRule: MovementRuleResult | undefined
+      if (targetMovement === 'mini-squat') {
+        movementRule = evaluateMiniSquat(pose)
+      } else if (targetMovement === 'side-leg-move') {
+        movementRule = evaluateSideLegMove(pose)
+      } else if (targetMovement === 'cross-body-knee-reach') {
+        movementRule = evaluateCrossBodyKneeReach(pose)
+      } else if (targetMovement === 'double-arm-raise') {
+        movementRule = evaluateDoubleArmRaise(pose)
+      } else if (targetMovement === 'side-to-side-foot-tap') {
+        movementRule = evaluateSideToSideFootTap(pose)
+      } else if (targetMovement === 'frontal-raise') {
+        movementRule = evaluateFrontalRaise(pose)
+      } else if (targetMovement === 'knee-lift-extension') {
+        movementRule = evaluateKneeLiftExtension(pose)
+      } else if (targetMovement === 'lateral-raise') {
+        movementRule = evaluateLateralRaise(pose)
+      } else if (targetMovement === 'arm-above-head') {
+        movementRule = evaluateArmAboveHead(pose)
+      } else if (targetMovement === 'rowing') {
+        movementRule = evaluateRowing(pose)
+      }
 
       return {
         targetMovement,
         targetConfidence: targetPrediction.probability,
         detectedMovement,
         detectedConfidence: topPrediction.probability,
-        isMatching: miniSquatRule?.isMatching
+        isMatching: movementRule?.isMatching
           ?? targetPrediction.probability > this.confidenceThreshold,
-        measurement: miniSquatRule?.measuredAngle === undefined
-          ? undefined
-          : {
-              type: 'knee-angle',
-              value: miniSquatRule.measuredAngle,
-              keypointConfidence: miniSquatRule.keypointConfidence,
-            },
+        measurement: movementRule?.measurement,
         timestamp: performance.now(),
       }
     } catch (cause) {
