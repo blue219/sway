@@ -146,6 +146,7 @@ function App() {
           <MovementScreen
             currentMovement={movementIndex + 1}
             isHolding={isHolding}
+            isPaused={isPaused}
             movement={movements[movementOrder[movementIndex]]}
             secondsRemaining={secondsRemaining}
             totalMovements={movements.length}

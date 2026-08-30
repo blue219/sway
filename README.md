@@ -24,7 +24,7 @@ pnpm build
 ## Interaction and accessibility
 
 - The round opens on the Standing March animation. Select **Start** to begin its five-second hold.
-- The movement demonstrator is a responsive Three.js character reconstructed as a stylized approximation from the approved front-view reference. Unseen side and rear details are inferred rather than exact.
+- The movement demonstrator loads `/assets/character.glb` in a responsive Three.js scene and loops its `StandingMarch_HighKnee` skeletal animation. Opening the pause dialog freezes the animation, while `prefers-reduced-motion` keeps the character in its neutral pose.
 - The upcoming quiz is shown in the header during the movement. After the movement, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - Select the header quiz preview at any time during the movement round to open the quiz directly.
 - Select **Pause** at any point to freeze the timer.

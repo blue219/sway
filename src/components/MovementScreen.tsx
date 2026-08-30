@@ -7,6 +7,7 @@ type MovementScreenProps = {
   movement: Movement
   totalMovements: number
   isHolding: boolean
+  isPaused: boolean
   secondsRemaining: number
   onPause: () => void
   onStart: () => void
@@ -17,6 +18,7 @@ export function MovementScreen({
   movement,
   totalMovements,
   isHolding,
+  isPaused,
   secondsRemaining,
   onPause,
   onStart,
@@ -32,7 +34,7 @@ export function MovementScreen({
           <h1 id="movement-title">{movement.title}</h1>
         </div>
         <div className="movement-figure">
-          <StandingMarchCharacter label={`An older adult demonstrating ${movement.title.toLowerCase()}`} />
+          <StandingMarchCharacter isPaused={isPaused} label={`An older adult demonstrating ${movement.title.toLowerCase()}`} />
         </div>
         <div aria-live="polite" className="countdown">
           <strong>{isHolding ? secondsRemaining : 5}</strong>

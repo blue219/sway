@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import { createStandingMarchElderModel } from '../three/createStandingMarchElderModel'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+
+const CHARACTER_MODEL_URL = '/assets/character.glb'
+const CHARACTER_HEIGHT = 5.4
+const STANDING_MARCH_ANIMATION = 'StandingMarch_HighKnee'
 
 declare global {
   interface Window {
@@ -16,11 +20,17 @@ declare global {
 }
 
 type StandingMarchCharacterProps = {
+  isPaused: boolean
   label: string
 }
 
-export function StandingMarchCharacter({ label }: StandingMarchCharacterProps) {
+export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharacterProps) {
   const hostRef = useRef<HTMLDivElement>(null)
+  const isPausedRef = useRef(isPaused)
+
+  useEffect(() => {
+    isPausedRef.current = isPaused
+  }, [isPaused])
 
   useEffect(() => {
     const host = hostRef.current
@@ -40,8 +50,9 @@ export function StandingMarchCharacter({ label }: StandingMarchCharacterProps) {
     renderer.shadowMap.type = THREE.PCFShadowMap
     host.append(renderer.domElement)
 
-    const character = createStandingMarchElderModel()
-    scene.add(character.root)
+    const characterRoot = new THREE.Group()
+    characterRoot.name = 'standing-march-character'
+    scene.add(characterRoot)
 
     const hemisphere = new THREE.HemisphereLight(0xfffaf0, 0x6f7c6d, 1.85)
     scene.add(hemisphere)
@@ -68,44 +79,78 @@ export function StandingMarchCharacter({ label }: StandingMarchCharacterProps) {
     scene.add(ground)
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const startedAt = performance.now()
+    const timer = new THREE.Timer()
+    timer.connect(document)
     let frame = 0
-    let capturePoseSeconds: number | null = null
+    let disposed = false
+    let mixer: THREE.AnimationMixer | null = null
+    let marchAction: THREE.AnimationAction | null = null
+    let marchClip: THREE.AnimationClip | null = null
+    let hasFixedCapturePose = false
+    let idleRotation = 0
 
-    window.__IMG2THREEJS_READY__ = true
-    window.__IMG2THREEJS_CAPTURE__ = {
-      setCamera: ({ azimuth = 0, elevation = 0, distance = 12.5 }) => {
-        const azimuthRadians = THREE.MathUtils.degToRad(azimuth)
-        const elevationRadians = THREE.MathUtils.degToRad(elevation)
-        const target = new THREE.Vector3(0, 2.65, 0)
-        camera.position.set(
-          Math.sin(azimuthRadians) * Math.cos(elevationRadians) * distance,
-          target.y + Math.sin(elevationRadians) * distance,
-          Math.cos(azimuthRadians) * Math.cos(elevationRadians) * distance,
-        )
-        camera.lookAt(target)
-        camera.updateProjectionMatrix()
-      },
-      setPose: (elapsedSeconds) => {
-        capturePoseSeconds = elapsedSeconds
-      },
-      setBackground: (opaque) => {
-        renderer.setClearColor(0xe9edf8, opaque ? 1 : 0)
-      },
-      getPartManifest: () => {
-        const runtime = character.root.userData.sculptRuntime as { nodes?: Record<string, THREE.Object3D> }
-        let unnamedMeshes = 0
-        character.root.traverse((object) => {
-          if (object instanceof THREE.Mesh && !object.name) unnamedMeshes += 1
-        })
-        return {
-          model: character.root.name,
-          parts: Object.keys(runtime.nodes ?? {}).map((name) => ({ name, kind: 'part' })),
-          unnamedMeshes,
-        }
-      },
-      capturePass: async () => ({ ok: true, selector: '.standing-march-character canvas' }),
+    const setPose = (elapsedSeconds: number | null) => {
+      if (!mixer || !marchAction || !marchClip) return
+
+      if (elapsedSeconds === null) {
+        hasFixedCapturePose = false
+        timer.reset()
+        return
+      }
+
+      hasFixedCapturePose = true
+      idleRotation = 0
+      characterRoot.rotation.y = 0
+      const loopTime = ((elapsedSeconds % marchClip.duration) + marchClip.duration) % marchClip.duration
+      mixer.setTime(loopTime)
     }
+
+    const handleReducedMotionChange = () => {
+      if (reducedMotion.matches) mixer?.setTime(0)
+      timer.reset()
+    }
+    reducedMotion.addEventListener('change', handleReducedMotionChange)
+
+    new GLTFLoader().load(
+      CHARACTER_MODEL_URL,
+      ({ animations, scene: model }) => {
+        if (disposed) {
+          disposeModel(model)
+          return
+        }
+
+        // Normalize the supplied model so asset dimensions do not affect the established framing.
+        const bounds = new THREE.Box3().setFromObject(model)
+        const size = bounds.getSize(new THREE.Vector3())
+        const center = bounds.getCenter(new THREE.Vector3())
+        const scale = CHARACTER_HEIGHT / size.y
+        model.scale.setScalar(scale)
+        model.position.set(-center.x * scale, -bounds.min.y * scale - 0.145, -center.z * scale)
+        model.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            object.castShadow = true
+            object.receiveShadow = true
+          }
+        })
+        characterRoot.add(model)
+
+        marchClip = THREE.AnimationClip.findByName(animations, STANDING_MARCH_ANIMATION) ?? null
+        if (marchClip) {
+          mixer = new THREE.AnimationMixer(model)
+          marchAction = mixer.clipAction(marchClip)
+          marchAction.setLoop(THREE.LoopRepeat, Infinity)
+          marchAction.play()
+          if (reducedMotion.matches) mixer.setTime(0)
+        } else {
+          console.error(`Standing march animation "${STANDING_MARCH_ANIMATION}" was not found in ${CHARACTER_MODEL_URL}.`)
+        }
+
+        window.__IMG2THREEJS_READY__ = true
+        window.__IMG2THREEJS_CAPTURE__ = createCaptureApi(camera, renderer, characterRoot, setPose)
+      },
+      undefined,
+      (error) => console.error('Failed to load the standing march character model.', error),
+    )
 
     const resize = () => {
       const width = Math.max(1, host.clientWidth)
@@ -119,18 +164,31 @@ export function StandingMarchCharacter({ label }: StandingMarchCharacterProps) {
     observer.observe(host)
     resize()
 
-    const render = () => {
-      const elapsedSeconds = capturePoseSeconds ?? (performance.now() - startedAt) / 1000
-      character.update(elapsedSeconds, reducedMotion.matches)
+    const render = (timestamp: number) => {
+      timer.update(timestamp)
+      const deltaSeconds = Math.min(timer.getDelta(), 0.1)
+      if (mixer && !isPausedRef.current && !reducedMotion.matches && !hasFixedCapturePose) {
+        mixer.update(deltaSeconds)
+      }
+      if (!isPausedRef.current && !reducedMotion.matches && !hasFixedCapturePose) {
+        idleRotation = Math.sin(timestamp / 1800) * 0.015
+      }
+      characterRoot.rotation.y = reducedMotion.matches ? 0 : idleRotation
       renderer.render(scene, camera)
       frame = window.requestAnimationFrame(render)
     }
-    render()
+    frame = window.requestAnimationFrame(render)
 
     return () => {
+      disposed = true
       window.cancelAnimationFrame(frame)
       observer.disconnect()
-      character.dispose()
+      reducedMotion.removeEventListener('change', handleReducedMotionChange)
+      timer.dispose()
+      mixer?.stopAllAction()
+      const animatedModel = characterRoot.children[0]
+      if (animatedModel) mixer?.uncacheRoot(animatedModel)
+      disposeModel(characterRoot)
       ground.geometry.dispose()
       ;(ground.material as THREE.Material).dispose()
       renderer.dispose()
@@ -141,4 +199,54 @@ export function StandingMarchCharacter({ label }: StandingMarchCharacterProps) {
   }, [])
 
   return <div ref={hostRef} aria-label={label} className="standing-march-character" role="img" />
+}
+
+function createCaptureApi(
+  camera: THREE.PerspectiveCamera,
+  renderer: THREE.WebGLRenderer,
+  characterRoot: THREE.Group,
+  setPose: (elapsedSeconds: number | null) => void,
+) {
+  return {
+    setCamera: ({ azimuth = 0, elevation = 0, distance = 12.5 }) => {
+      const azimuthRadians = THREE.MathUtils.degToRad(azimuth)
+      const elevationRadians = THREE.MathUtils.degToRad(elevation)
+      const target = new THREE.Vector3(0, 2.65, 0)
+      camera.position.set(
+        Math.sin(azimuthRadians) * Math.cos(elevationRadians) * distance,
+        target.y + Math.sin(elevationRadians) * distance,
+        Math.cos(azimuthRadians) * Math.cos(elevationRadians) * distance,
+      )
+      camera.lookAt(target)
+      camera.updateProjectionMatrix()
+    },
+    setPose,
+    setBackground: (opaque: boolean) => renderer.setClearColor(0xe9edf8, opaque ? 1 : 0),
+    getPartManifest: () => {
+      const parts: Array<{ name: string; kind: string }> = []
+      let unnamedMeshes = 0
+      characterRoot.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return
+        if (object.name) parts.push({ name: object.name, kind: 'mesh' })
+        else unnamedMeshes += 1
+      })
+      return { model: characterRoot.name, parts, unnamedMeshes }
+    },
+    capturePass: async () => ({ ok: true as const, selector: '.standing-march-character canvas' }),
+  }
+}
+
+function disposeModel(root: THREE.Object3D) {
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return
+    if (object instanceof THREE.SkinnedMesh) object.skeleton.dispose()
+    object.geometry.dispose()
+    const materials = Array.isArray(object.material) ? object.material : [object.material]
+    materials.forEach((material) => {
+      for (const value of Object.values(material)) {
+        if (value instanceof THREE.Texture) value.dispose()
+      }
+      material.dispose()
+    })
+  })
 }
