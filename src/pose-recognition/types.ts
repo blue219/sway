@@ -1,0 +1,56 @@
+/** Exercise modes supported by the pose-recognition module */
+export type ExerciseMode = 'seated' | 'standing'
+/** Movements supported by the pose-recognition module */
+export type MovementId = StandingMovementId | SeatedMovementId
+
+/**
+ * These identifiers are independent of the labels produced by the underlying
+ * machine-learning model.
+ *
+ * Values must remain aligned with the application's movement-to-model label mapping.
+ */
+export type StandingMovementId =
+  | 'side-leg-move'
+  | 'mini-squat'
+  | 'cross-body-knee-reach'
+  | 'double-arm-raise'
+  | 'side-to-side-foot-tap'
+
+export type SeatedMovementId =
+  | 'frontal-raise'
+  | 'knee-lift-extension'
+  | 'lateral-raise'
+  | 'arm-above-head'
+  | 'rowing'
+
+/** A decoded image frame supplied to the pose-recognition model. */
+export type PoseInput = ImageData
+
+/** Public contract for loading and invoking the pose-recognition model. */
+export interface PoseRecognizer {
+  /**
+   * Loads and initializes the model.
+   */
+  load(): Promise<void>
+  /**
+   * Evaluates one image frame against the requested target movement.
+   *
+   * @param input Decoded image frame to evaluate.
+   * @param targetMovement Movement that the user is expected to perform.
+   * @returns The recognition result for the supplied frame.
+   * @throws If the model has not been loaded or prediction fails.
+   */
+  predict(
+    input: PoseInput,
+    targetMovement: MovementId,
+  ): Promise<PoseRecognitionResult>
+}
+
+/** Result produced when evaluating an image frame against a target movement. */
+export type PoseRecognitionResult = {
+    targetMovement: MovementId
+    targetConfidence: number
+    isMatching: boolean
+    /** Monotonic prediction timestamp in milliseconds. */
+    timestamp: number
+}
