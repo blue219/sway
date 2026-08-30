@@ -54,3 +54,14 @@ export type PoseRecognitionResult = {
     /** Monotonic prediction timestamp in milliseconds. */
     timestamp: number
 }
+
+/** Aggregated state produced from a sequence of single-frame results. */
+export type ContinuousPoseResult = {
+  targetMovement: MovementId
+  /** Whether the latest frame matches the target movement. */
+  isHolding: boolean
+  /** Hold progress from 0 to 1. */
+  progress: number
+  /** True once when the required hold has been completed. */
+  completed: boolean
+}

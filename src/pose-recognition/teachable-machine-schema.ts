@@ -1,4 +1,4 @@
-import type { MovementId } from './types'
+import type { ExerciseMode, MovementId } from './types'
 
 /**
  * Teachable Machine class labels are an implementation detail. This adapter is
@@ -35,4 +35,30 @@ export function toTeachableMachineLabel(movementId: MovementId): string {
  */
 export function toMovementId(teachableMachineLabel: string): MovementId | undefined {
   return movementByTeachableMachineLabel.get(teachableMachineLabel)
+}
+
+const movementIdsByMode = {
+  seated: [
+    'frontal-raise',
+    'knee-lift-extension',
+    'lateral-raise',
+    'arm-above-head',
+    'rowing'],
+  standing: [
+    'side-leg-move',
+    'mini-squat',
+    'cross-body-knee-reach',
+    'double-arm-raise',
+    'side-to-side-foot-tap',
+  ],
+} as const satisfies Record<ExerciseMode, readonly MovementId[]>
+
+export function getTeachableMachineLabels(mode: ExerciseMode): readonly string[] {
+  return movementIdsByMode[mode].map(toTeachableMachineLabel)
+}
+
+export function getMovementMode(movementId: MovementId): ExerciseMode {
+  return (movementIdsByMode.seated as readonly MovementId[]).includes(movementId)
+    ? 'seated'
+    : 'standing'
 }
