@@ -49,8 +49,18 @@ export interface PoseRecognizer {
 /** Result produced when evaluating an image frame against a target movement. */
 export type PoseRecognitionResult = {
     targetMovement: MovementId
+    /** Raw confidence assigned to the target class by the TM classifier. */
     targetConfidence: number
+    /** Highest-confidence movement predicted by the model. */
+    detectedMovement: MovementId
+    detectedConfidence: number
     isMatching: boolean
+    /** Movement-specific measurement, when a rule-based evaluator is used. */
+    measurement?: {
+      type: 'knee-angle'
+      value: number
+      keypointConfidence: number
+    }
     /** Monotonic prediction timestamp in milliseconds. */
     timestamp: number
 }

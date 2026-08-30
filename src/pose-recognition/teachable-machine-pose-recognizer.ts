@@ -1,7 +1,9 @@
 import * as tmPose from '@teachablemachine/pose'
+import { evaluateMiniSquat } from './movement-rules'
 import {
   getMovementMode,
   getTeachableMachineLabels,
+  toMovementId,
   toTeachableMachineLabel,
 } from './teachable-machine-schema'
 import type {
@@ -34,7 +36,7 @@ export class TeachableMachinePoseRecognizer implements PoseRecognizer {
     options: TeachableMachinePoseRecognizerOptions = {},
     loadModel: ModelLoader = tmPose.load,
   ) {
-    this.confidenceThreshold = options.confidenceThreshold ?? 0.9
+    this.confidenceThreshold = options.confidenceThreshold ?? 0.7
     this.modelBaseUrl = options.modelBaseUrl ?? import.meta.env.BASE_URL
     this.loadModel = loadModel
 
@@ -70,19 +72,40 @@ export class TeachableMachinePoseRecognizer implements PoseRecognizer {
     }
 
     try {
-      const { posenetOutput } = await model.estimatePose(input)
+      const { pose, posenetOutput } = await model.estimatePose(input)
       const predictions = await model.predict(posenetOutput)
       const targetLabel = toTeachableMachineLabel(targetMovement)
       const targetPrediction = predictions.find(({ className }) => className === targetLabel)
+      const topPrediction = predictions.reduce((highest, prediction) => (
+        prediction.probability > highest.probability ? prediction : highest
+      ))
+      const detectedMovement = toMovementId(topPrediction.className)
 
       if (!targetPrediction) {
         throw new Error(`Model did not return the expected class: ${targetLabel}`)
       }
+      if (!detectedMovement) {
+        throw new Error(`Model returned an unknown class: ${topPrediction.className}`)
+      }
+
+      const miniSquatRule = targetMovement === 'mini-squat'
+        ? evaluateMiniSquat(pose)
+        : undefined
 
       return {
         targetMovement,
         targetConfidence: targetPrediction.probability,
-        isMatching: targetPrediction.probability > this.confidenceThreshold,
+        detectedMovement,
+        detectedConfidence: topPrediction.probability,
+        isMatching: miniSquatRule?.isMatching
+          ?? targetPrediction.probability > this.confidenceThreshold,
+        measurement: miniSquatRule?.measuredAngle === undefined
+          ? undefined
+          : {
+              type: 'knee-angle',
+              value: miniSquatRule.measuredAngle,
+              keypointConfidence: miniSquatRule.keypointConfidence,
+            },
         timestamp: performance.now(),
       }
     } catch (cause) {
