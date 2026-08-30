@@ -11,6 +11,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@teachablemachine/pose": "0.8.6",
+    "@tensorflow-models/posenet": "2.2.0",
+    "@tensorflow/tfjs": "1.7.4",
     "animal-island-ui": "^1.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
