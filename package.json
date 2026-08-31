@@ -11,6 +11,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@teachablemachine/pose": "0.8.6",
+    "@tensorflow-models/posenet": "2.2.0",
+    "@tensorflow/tfjs": "1.7.4",
     "animal-island-ui": "^1.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
@@ -21,12 +24,14 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^26.1.2",
+    "@types/pngjs": "6.0.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^10.8.0",
     "globals": "^17.8.0",
     "jsdom": "^30.0.1",
+    "pngjs": "7.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.65.0",
     "vite": "^8.2.0",
