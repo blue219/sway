@@ -1,8 +1,7 @@
 import { Cursor } from 'animal-island-ui'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AppHeader } from './components/AppHeader'
 import { MovementScreen } from './components/MovementScreen'
-import { PauseDialog } from './components/PauseDialog'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
 import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
@@ -20,12 +19,13 @@ function App() {
   const [isShowingAnswer, setIsShowingAnswer] = useState(false)
   const [correctAnswers, setCorrectAnswers] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
+  const [playRequest, setPlayRequest] = useState(0)
   const [secondsRemaining, setSecondsRemaining] = useState(holdSeconds)
   const [points, setPoints] = useState(0)
+  const completedMovementRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (!isHolding || isPaused || secondsRemaining === 0) {
+    if (!isHolding || secondsRemaining === 0) {
       return undefined
     }
 
@@ -34,7 +34,7 @@ function App() {
     }, 1_000)
 
     return () => window.clearInterval(timer)
-  }, [isHolding, isPaused, secondsRemaining])
+  }, [isHolding, secondsRemaining])
 
   useEffect(() => {
     if (!isShowingAnswer) {
@@ -57,12 +57,15 @@ function App() {
   }, [correctAnswers, isShowingAnswer, quizQuestionIndex])
 
   useEffect(() => {
-    if (isHolding && !isPaused && secondsRemaining === 0) {
-      nextMovement()
-    }
-  }, [isHolding, isPaused, secondsRemaining])
+    if (!isHolding || secondsRemaining !== 0 || completedMovementRef.current === movementIndex) return
+
+    // React Strict Mode can replay effects; each movement index can advance only once.
+    completedMovementRef.current = movementIndex
+    nextMovement()
+  }, [isHolding, movementIndex, secondsRemaining])
 
   function resetRound() {
+    completedMovementRef.current = null
     setMovementIndex(0)
     setMovementOrder(createRandomMovementOrder(movements.length))
     setQuizOrder(createRandomQuizOrder(quizQuestions.length))
@@ -71,12 +74,16 @@ function App() {
     setIsShowingAnswer(false)
     setCorrectAnswers(0)
     setIsHolding(false)
-    setIsPaused(false)
+    setPlayRequest(0)
     setSecondsRemaining(holdSeconds)
     setPoints(0)
   }
 
   function startHold() {
+    setPlayRequest((request) => request + 1)
+  }
+
+  function startCountdown() {
     setSecondsRemaining(holdSeconds)
     setIsHolding(true)
   }
@@ -88,8 +95,10 @@ function App() {
       return
     }
 
+    setIsHolding(false)
     setMovementIndex((index) => index + 1)
     setSecondsRemaining(holdSeconds)
+    setPlayRequest((request) => request + 1)
   }
 
   function answerQuiz(answer: string) {
@@ -107,7 +116,6 @@ function App() {
 
   function openQuiz() {
     setIsHolding(false)
-    setIsPaused(false)
     setScreen('quiz')
   }
 
@@ -141,20 +149,21 @@ function App() {
   return (
     <Cursor>
       <div className="app-shell">
-        {screen !== 'movement' ? <AppHeader points={points} roundPreview={roundPreview} treeStage={treeStage} /> : null}
+        <AppHeader points={points} roundPreview={roundPreview} treeStage={treeStage} />
         {screen === 'movement' ? (
           <MovementScreen
+            currentMovement={movementIndex + 1}
             isHolding={isHolding}
-            isPaused={isPaused}
             movement={movements[movementOrder[movementIndex]]}
+            playRequest={playRequest}
             secondsRemaining={secondsRemaining}
-            onPause={() => setIsPaused(true)}
+            totalMovements={movements.length}
+            onPlaybackStart={startCountdown}
             onStart={startHold}
           />
         ) : null}
         {screen === 'quiz' ? <QuizScreen currentQuestion={quizQuestionIndex + 1} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
         {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalQuestions={questionsPerRound} treeStage={treeStage} onFinish={finishRound} onPlayAgain={playAgain} /> : null}
-        {screen === 'movement' && isPaused ? <PauseDialog onEnd={finishRound} onResume={() => setIsPaused(false)} /> : null}
       </div>
     </Cursor>
   )

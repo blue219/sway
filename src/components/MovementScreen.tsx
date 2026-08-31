@@ -1,69 +1,68 @@
-import { Button, Icon } from 'animal-island-ui'
+import { Button } from 'animal-island-ui'
 import type { Movement } from '../game'
 import { MovementVideo } from './MovementVideo'
 
 type MovementScreenProps = {
+  currentMovement: number
   movement: Movement
   isHolding: boolean
-  isPaused: boolean
   secondsRemaining: number
-  onPause: () => void
+  totalMovements: number
+  playRequest: number
+  onPlaybackStart: () => void
   onStart: () => void
 }
 
 export function MovementScreen({
+  currentMovement,
   movement,
   isHolding,
-  isPaused,
   secondsRemaining,
-  onPause,
+  totalMovements,
+  playRequest,
+  onPlaybackStart,
   onStart,
 }: MovementScreenProps) {
   const seconds = isHolding ? secondsRemaining : 5
 
   return (
     <main className="movement-screen" aria-labelledby="movement-title">
-      <section className="movement-command-card">
-        <div className="movement-introduction">
-          <h1 id="movement-title">{movement.title}</h1>
-          <span aria-hidden="true" className="movement-accent" />
-          <p>March in place</p>
-        </div>
-        <div aria-live="polite" className="movement-countdown">
-          <strong>{seconds}</strong>
-          <span>seconds left</span>
-        </div>
-        <div className="movement-controls">
-          <div className="recognition-status">
-            <span aria-hidden="true" className="recognition-dot" />
-            <div>
-              <strong>Recognition Success</strong>
-              <span>Camera Ready</span>
-            </div>
-            <span aria-label="Movement 1 of 5" className="movement-index">1 / 5</span>
+      <section className="movement-action-card">
+        <div className="movement-card-heading">
+          <img alt="" className="movement-action-icon" src="/assets/movement-activity-icon.png" />
+          <div className="movement-introduction">
+            <h1 id="movement-title">{movement.title}</h1>
           </div>
-          <Button className="start-movement-button" disabled={isHolding} htmlType="button" size="large" type="primary" onClick={onStart}>
-            {isHolding ? 'Holding' : 'Start'}
-          </Button>
-          <Button className="pause-movement-button" htmlType="button" size="middle" type="text" onClick={onPause}>
-            Pause
-          </Button>
+          <span aria-label={`Movement ${currentMovement} of ${totalMovements}`} className="movement-index">
+            {currentMovement}/{totalMovements}
+          </span>
+        </div>
+        <div className="movement-video-panel">
+          <div className="movement-video-frame">
+            <div aria-label={`${seconds} seconds remaining`} aria-live="polite" className="movement-countdown">
+              <strong>{seconds}</strong>
+            </div>
+            <MovementVideo key={movement.videoSrc} label={`An older adult demonstrating ${movement.title.toLowerCase()}`} playRequest={playRequest} src={movement.videoSrc} onPlaybackStart={onPlaybackStart} />
+          </div>
         </div>
       </section>
-      <section className="movement-preview-card" aria-label="Movement demonstration and camera preview">
-        <div className="movement-video-panel">
-          <MovementVideo isPaused={isPaused} label={`An older adult demonstrating ${movement.title.toLowerCase()}`} src={movement.videoSrc} />
+      <section className="movement-camera-card" aria-label="Movement camera preview">
+        <div className="movement-camera-heading">
+          <div>
+            <h2>Movement ready</h2>
+          </div>
+          <Button className="start-movement-button" disabled={isHolding} htmlType="button" size="large" type="primary" onClick={onStart}>
+            Start
+          </Button>
         </div>
         <div className="camera-preview-panel">
-          <img alt="A bright living room prepared for movement detection" src="/assets/camera-preview-living-room.png" />
-          <div className="camera-preview-label">
-            <Icon aria-hidden="true" name="icon-camera" size={24} />
-            <span>Camera Preview</span>
-          </div>
-          <div aria-hidden="true" className="camera-guide" />
-          <div className="camera-ready-status">
-            <span aria-hidden="true" className="camera-ready-mark">✓</span>
-            <span>Ready to detect movement</span>
+          <div className="camera-preview-area">
+            <img alt="A bright living room prepared for movement detection" src="/assets/camera-preview-living-room.png" />
+            <div aria-hidden="true" className="camera-guide" />
+            <div className="camera-ready-status">
+              <span aria-hidden="true" className="camera-ready-mark">✓</span>
+              <span>Ready to detect movement</span>
+            </div>
           </div>
         </div>
       </section>

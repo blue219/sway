@@ -1,6 +1,6 @@
 # Whakakori Together
 
-Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. A round starts with a standing march video, followed by five multiple-choice questions and a session-only wellbeing tree reward.
+Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. Each round presents five movement videos in a random, non-repeating order, followed by five multiple-choice questions and a session-only wellbeing tree reward.
 
 ## Local startup
 
@@ -23,12 +23,11 @@ pnpm build
 
 ## Interaction and accessibility
 
-- The round opens on the Standing March video. Select **Start** to begin its five-second hold.
-- The movement demonstrator loops `/assets/standing-march.mp4` in a responsive native video player. Add the final MP4 at `public/assets/standing-march.mp4`; opening the pause dialog pauses playback and resuming the movement continues it.
-- The movement page uses a dedicated two-card layout with a visual-only camera preview. It does not request camera permissions or perform movement detection.
-- The action counter displays `1 / 5` to match the demonstration layout; the prototype still contains one movement before the quiz.
-- After the movement, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
-- Select **Pause** at any point to freeze the timer.
+- The round opens on one of five preloaded movement videos. Select **Start** to begin playback from the start; its five-second hold starts when playback begins.
+- The movement demonstrator loops the selected responsive native video player asset.
+- The movement page uses a dedicated two-card layout: the demonstration is on the left, while the visual-only camera preview, readiness message, and Start button are on the right. It does not request camera permissions or perform movement detection.
+- The countdown and action counter display in the upper-left and upper-right corners of the movement video, respectively. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift in a random, non-repeating order.
+- After all five movements, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - On the quiz, use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
 - Each correct answer earns 10 Wellbeing Points, for a maximum of 50 points per round.
 - The UI uses large controls, visible keyboard focus, high contrast, responsive layouts, and reduced motion preferences.

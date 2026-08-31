@@ -2,6 +2,16 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
+const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
+const movementVideoSources = ['/assets/side-arm-raise.mp4', '/assets/standing-march.mp4', '/assets/shallow-squat.mp4', '/assets/standing-side-bend.mp4', '/assets/side-leg-lift.mp4']
+
+function completeMovementSequence() {
+  for (let movement = 0; movement < 5; movement += 1) {
+    fireEvent.play(screen.getByLabelText(/An older adult demonstrating/))
+    act(() => vi.advanceTimersByTime(5_000))
+  }
+}
+
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
@@ -9,49 +19,60 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
-  it('opens the quiz after the standing march hold completes', () => {
+  it('opens the quiz after five non-repeating movement holds complete', () => {
     vi.useFakeTimers()
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: 'Standing March' })).toBeInTheDocument()
+    expect(movementTitles).toContain(screen.getByRole('heading', { level: 1 }).textContent)
+    expect(screen.getByText('Whakakori Together')).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
-    expect(screen.getByLabelText('An older adult demonstrating standing march')).toHaveAttribute('src', '/assets/standing-march.mp4')
+    expect(document.querySelector('img[src="/assets/movement-activity-icon.png"]')).toBeInTheDocument()
+    expect(screen.getByText('1/5')).toBeInTheDocument()
+    expect(document.querySelector('.movement-card-heading .movement-index')).toBeInTheDocument()
+    expect(document.querySelector('.movement-video-frame .movement-countdown')).toBeInTheDocument()
+    expect(screen.queryByText('seconds left')).not.toBeInTheDocument()
+    expect(document.querySelector('.recognition-status')).not.toBeInTheDocument()
+    expect(screen.queryByText('Follow the demonstration')).not.toBeInTheDocument()
+    expect(document.querySelector('.movement-ready-dot')).not.toBeInTheDocument()
+    const movementVideo = screen.getByLabelText(/An older adult demonstrating/)
+    expect(movementVideoSources).toContain(movementVideo.getAttribute('src'))
+    expect(movementVideo).not.toHaveAttribute('autoplay')
+    expect(movementVideo).toHaveAttribute('preload', 'auto')
     expect(screen.getByRole('img', { name: 'A bright living room prepared for movement detection' })).toHaveAttribute('src', '/assets/camera-preview-living-room.png')
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    expect(screen.getByText('seconds left')).toBeInTheDocument()
+    expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(1_000))
+    expect(screen.getByText('5')).toBeInTheDocument()
 
-    act(() => vi.advanceTimersByTime(5_000))
+    fireEvent.play(screen.getByLabelText(/An older adult demonstrating/))
+    act(() => vi.advanceTimersByTime(1_000))
+    expect(screen.getByText('4')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(4_000))
+    expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
+
+    for (let movement = 0; movement < 4; movement += 1) {
+      fireEvent.play(screen.getByLabelText(/An older adult demonstrating/))
+      act(() => vi.advanceTimersByTime(5_000))
+    }
 
     expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
   })
 
-  it('freezes the hold timer while paused and resumes it when asked', () => {
-    const pauseVideo = vi.spyOn(HTMLMediaElement.prototype, 'pause')
-    const playVideo = vi.spyOn(HTMLMediaElement.prototype, 'play')
-    render(<App />)
-    pauseVideo.mockClear()
-    playVideo.mockClear()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
-
-    expect(screen.getByRole('dialog', { name: 'Paused' })).toBeInTheDocument()
-    expect(pauseVideo).toHaveBeenCalledTimes(1)
-    fireEvent.click(screen.getByRole('button', { name: 'Resume movement' }))
-
-    expect(screen.queryByRole('dialog', { name: 'Paused' })).not.toBeInTheDocument()
-    expect(playVideo).toHaveBeenCalledTimes(1)
-  })
-
-  it('uses the single standing march before opening the quiz', () => {
+  it('uses every movement once before opening the quiz', () => {
     vi.useFakeTimers()
     render(<App />)
 
+    const displayedTitles = new Set<string>()
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    act(() => vi.advanceTimersByTime(5_000))
+    for (let movement = 0; movement < 5; movement += 1) {
+      displayedTitles.add(screen.getByRole('heading', { level: 1 }).textContent ?? '')
+      fireEvent.play(screen.getByLabelText(/An older adult demonstrating/))
+      act(() => vi.advanceTimersByTime(5_000))
+    }
 
     expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+    expect(displayedTitles).toEqual(new Set(movementTitles))
   })
 
   it('shows correct and incorrect answer feedback for one second before advancing', () => {
@@ -59,7 +80,7 @@ describe('Whakakori Together round', () => {
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    act(() => vi.advanceTimersByTime(5_000))
+    completeMovementSequence()
     const firstQuestion = screen.getByRole('heading', { level: 1 }).textContent
     fireEvent.click(screen.getAllByRole('radio')[0])
 
@@ -78,7 +99,7 @@ describe('Whakakori Together round', () => {
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    act(() => vi.advanceTimersByTime(5_000))
+    completeMovementSequence()
 
     const answeredQuestions = new Set<string>()
     for (let question = 0; question < 5; question += 1) {
@@ -96,6 +117,6 @@ describe('Whakakori Together round', () => {
     expect(screen.getByText('+50 Wellbeing Points')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish for today' }))
-    expect(screen.getByRole('heading', { name: 'Standing March' })).toBeInTheDocument()
+    expect(movementTitles).toContain(screen.getByRole('heading', { level: 1 }).textContent)
   })
 })

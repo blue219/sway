@@ -25,10 +25,34 @@ const pointsPerCorrectAnswer = 10
 
 export const movements: Movement[] = [
   {
+    title: 'Side Arm Raise',
+    guidance: 'Raise both arms out to the sides with a comfortable range of motion.',
+    focus: 'Keep your shoulders relaxed and your chest open.',
+    videoSrc: '/assets/side-arm-raise.mp4',
+  },
+  {
     title: 'Standing March',
-    guidance: 'Gently lift one knee at a time while keeping a steady rhythm.',
-    focus: 'Keep your torso tall and use a comfortable step height.',
+    guidance: 'March in place at a comfortable pace, lifting one knee at a time.',
+    focus: 'Keep your posture tall and use support if you need it.',
     videoSrc: '/assets/standing-march.mp4',
+  },
+  {
+    title: 'Shallow Squat',
+    guidance: 'Bend your knees slightly, then return to standing.',
+    focus: 'Keep your weight balanced and your knees comfortable.',
+    videoSrc: '/assets/shallow-squat.mp4',
+  },
+  {
+    title: 'Standing Side Bend',
+    guidance: 'Gently bend to one side, then return to the middle.',
+    focus: 'Keep both feet grounded and move within a comfortable range.',
+    videoSrc: '/assets/standing-side-bend.mp4',
+  },
+  {
+    title: 'Side Leg Lift',
+    guidance: 'Lift one leg out to the side, then lower it with control.',
+    focus: 'Stand tall and use support if you need it.',
+    videoSrc: '/assets/side-leg-lift.mp4',
   },
 ]
 

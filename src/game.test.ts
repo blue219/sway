@@ -18,12 +18,15 @@ describe('round rewards', () => {
     expect(createRandomMovementOrder(5, () => 0)).toEqual([1, 2, 3, 4, 0])
   })
 
-  it('uses one animated standing march per round', () => {
-    expect(movements).toEqual([
-      expect.objectContaining({
-        title: 'Standing March',
-      }),
+  it('includes five named movement videos per round', () => {
+    expect(movements.map((movement) => movement.title)).toEqual([
+      'Side Arm Raise',
+      'Standing March',
+      'Shallow Squat',
+      'Standing Side Bend',
+      'Side Leg Lift',
     ])
+    expect(movements.every((movement) => movement.videoSrc.startsWith('/assets/') && movement.videoSrc.endsWith('.mp4'))).toBe(true)
   })
 
   it('creates a shuffled quiz order without repeated questions', () => {
