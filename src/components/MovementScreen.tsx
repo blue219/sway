@@ -1,11 +1,9 @@
-import { Button, Card } from 'animal-island-ui'
+import { Button, Icon } from 'animal-island-ui'
 import type { Movement } from '../game'
-import { StandingMarchCharacter } from './StandingMarchCharacter'
+import { MovementVideo } from './MovementVideo'
 
 type MovementScreenProps = {
-  currentMovement: number
   movement: Movement
-  totalMovements: number
   isHolding: boolean
   isPaused: boolean
   secondsRemaining: number
@@ -14,41 +12,61 @@ type MovementScreenProps = {
 }
 
 export function MovementScreen({
-  currentMovement,
   movement,
-  totalMovements,
   isHolding,
   isPaused,
   secondsRemaining,
   onPause,
   onStart,
 }: MovementScreenProps) {
+  const seconds = isHolding ? secondsRemaining : 5
+
   return (
-    <main className="screen movement-screen">
-      <Card className="movement-card" color="app-blue" pattern="app-blue" aria-labelledby="movement-title">
-        <div aria-label={`Movement ${currentMovement} of ${totalMovements}`} className="movement-progress">
-          <span aria-hidden="true" className="movement-progress-icon" />
-          <strong>{currentMovement} of {totalMovements}</strong>
-        </div>
-        <div className="movement-copy">
+    <main className="movement-screen" aria-labelledby="movement-title">
+      <section className="movement-command-card">
+        <div className="movement-introduction">
           <h1 id="movement-title">{movement.title}</h1>
+          <span aria-hidden="true" className="movement-accent" />
+          <p>March in place</p>
         </div>
-        <div className="movement-figure">
-          <StandingMarchCharacter isPaused={isPaused} label={`An older adult demonstrating ${movement.title.toLowerCase()}`} />
+        <div aria-live="polite" className="movement-countdown">
+          <strong>{seconds}</strong>
+          <span>seconds left</span>
         </div>
-        <div aria-live="polite" className="countdown">
-          <strong>{isHolding ? secondsRemaining : 5}</strong>
-          <span>Hold for {isHolding ? secondsRemaining : 5} seconds</span>
-        </div>
-        <div className="movement-actions">
-          <Button className="primary-action" disabled={isHolding} htmlType="button" size="large" type="primary" onClick={onStart}>
+        <div className="movement-controls">
+          <div className="recognition-status">
+            <span aria-hidden="true" className="recognition-dot" />
+            <div>
+              <strong>Recognition Success</strong>
+              <span>Camera Ready</span>
+            </div>
+            <span aria-label="Movement 1 of 5" className="movement-index">1 / 5</span>
+          </div>
+          <Button className="start-movement-button" disabled={isHolding} htmlType="button" size="large" type="primary" onClick={onStart}>
             {isHolding ? 'Holding' : 'Start'}
           </Button>
-          <Button className="secondary-action" htmlType="button" size="large" onClick={onPause}>
+          <Button className="pause-movement-button" htmlType="button" size="middle" type="text" onClick={onPause}>
             Pause
           </Button>
         </div>
-      </Card>
+      </section>
+      <section className="movement-preview-card" aria-label="Movement demonstration and camera preview">
+        <div className="movement-video-panel">
+          <MovementVideo isPaused={isPaused} label={`An older adult demonstrating ${movement.title.toLowerCase()}`} src={movement.videoSrc} />
+        </div>
+        <div className="camera-preview-panel">
+          <img alt="A bright living room prepared for movement detection" src="/assets/camera-preview-living-room.png" />
+          <div className="camera-preview-label">
+            <Icon aria-hidden="true" name="icon-camera" size={24} />
+            <span>Camera Preview</span>
+          </div>
+          <div aria-hidden="true" className="camera-guide" />
+          <div className="camera-ready-status">
+            <span aria-hidden="true" className="camera-ready-mark">✓</span>
+            <span>Ready to detect movement</span>
+          </div>
+        </div>
+      </section>
     </main>
   )
 }
