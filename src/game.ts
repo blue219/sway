@@ -7,6 +7,7 @@ export type Movement = {
   title: string
   guidance: string
   focus: string
+  videoSrc: string
 }
 
 export type QuizQuestion = {
@@ -27,6 +28,7 @@ export const movements: Movement[] = [
     title: 'Standing March',
     guidance: 'Gently lift one knee at a time while keeping a steady rhythm.',
     focus: 'Keep your torso tall and use a comfortable step height.',
+    videoSrc: '/assets/standing-march.mp4',
   },
 ]
 

@@ -1,6 +1,6 @@
 # Whakakori Together
 
-Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. A round starts with a real-time procedural 3D standing march, followed by five multiple-choice questions and a session-only wellbeing tree reward.
+Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. A round starts with a standing march video, followed by five multiple-choice questions and a session-only wellbeing tree reward.
 
 ## Local startup
 
@@ -23,10 +23,11 @@ pnpm build
 
 ## Interaction and accessibility
 
-- The round opens on the Standing March animation. Select **Start** to begin its five-second hold.
-- The movement demonstrator loads the web-optimized `/assets/character_runtime.glb` in a responsive Three.js scene and loops its `StandingMarch_HighKnee` skeletal animation at a power-conscious 30 FPS. Rendering is capped for high-density displays, has no shadow pass, and stops drawing static frames while paused, hidden, or under `prefers-reduced-motion`. Keep `/assets/character.glb` as the editable source asset when regenerating the runtime model.
-- The upcoming quiz is shown in the header during the movement. After the movement, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
-- Select the header quiz preview at any time during the movement round to open the quiz directly.
+- The round opens on the Standing March video. Select **Start** to begin its five-second hold.
+- The movement demonstrator loops `/assets/standing-march.mp4` in a responsive native video player. Add the final MP4 at `public/assets/standing-march.mp4`; opening the pause dialog pauses playback and resuming the movement continues it.
+- The movement page uses a dedicated two-card layout with a visual-only camera preview. It does not request camera permissions or perform movement detection.
+- The action counter displays `1 / 5` to match the demonstration layout; the prototype still contains one movement before the quiz.
+- After the movement, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - Select **Pause** at any point to freeze the timer.
 - On the quiz, use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
 - Each correct answer earns 10 Wellbeing Points, for a maximum of 50 points per round.

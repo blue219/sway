@@ -141,15 +141,13 @@ function App() {
   return (
     <Cursor>
       <div className="app-shell">
-        <AppHeader points={points} roundPreview={roundPreview} treeStage={treeStage} />
+        {screen !== 'movement' ? <AppHeader points={points} roundPreview={roundPreview} treeStage={treeStage} /> : null}
         {screen === 'movement' ? (
           <MovementScreen
-            currentMovement={movementIndex + 1}
             isHolding={isHolding}
             isPaused={isPaused}
             movement={movements[movementOrder[movementIndex]]}
             secondsRemaining={secondsRemaining}
-            totalMovements={movements.length}
             onPause={() => setIsPaused(true)}
             onStart={startHold}
           />

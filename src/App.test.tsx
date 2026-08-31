@@ -4,6 +4,7 @@ import App from './App'
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
@@ -13,11 +14,12 @@ describe('Whakakori Together round', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: 'Standing March' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Movement 1 of 1')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'An older adult demonstrating standing march' })).toHaveClass('standing-march-character')
+    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
+    expect(screen.getByLabelText('An older adult demonstrating standing march')).toHaveAttribute('src', '/assets/standing-march.mp4')
+    expect(screen.getByRole('img', { name: 'A bright living room prepared for movement detection' })).toHaveAttribute('src', '/assets/camera-preview-living-room.png')
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    expect(screen.getByText('Hold for 5 seconds')).toBeInTheDocument()
+    expect(screen.getByText('seconds left')).toBeInTheDocument()
 
     act(() => vi.advanceTimersByTime(5_000))
 
@@ -25,24 +27,21 @@ describe('Whakakori Together round', () => {
   })
 
   it('freezes the hold timer while paused and resumes it when asked', () => {
+    const pauseVideo = vi.spyOn(HTMLMediaElement.prototype, 'pause')
+    const playVideo = vi.spyOn(HTMLMediaElement.prototype, 'play')
     render(<App />)
+    pauseVideo.mockClear()
+    playVideo.mockClear()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
 
     expect(screen.getByRole('dialog', { name: 'Paused' })).toBeInTheDocument()
+    expect(pauseVideo).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole('button', { name: 'Resume movement' }))
 
     expect(screen.queryByRole('dialog', { name: 'Paused' })).not.toBeInTheDocument()
-  })
-
-  it('opens the quiz when the header quiz preview is selected', () => {
-    render(<App />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open quiz' }))
-
-    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
-    expect(screen.getAllByRole('radio')).toHaveLength(4)
+    expect(playVideo).toHaveBeenCalledTimes(1)
   })
 
   it('uses the single standing march before opening the quiz', () => {
@@ -59,7 +58,8 @@ describe('Whakakori Together round', () => {
     vi.useFakeTimers()
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open quiz' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    act(() => vi.advanceTimersByTime(5_000))
     const firstQuestion = screen.getByRole('heading', { level: 1 }).textContent
     fireEvent.click(screen.getAllByRole('radio')[0])
 
@@ -77,7 +77,8 @@ describe('Whakakori Together round', () => {
     vi.useFakeTimers()
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open quiz' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    act(() => vi.advanceTimersByTime(5_000))
 
     const answeredQuestions = new Set<string>()
     for (let question = 0; question < 5; question += 1) {
