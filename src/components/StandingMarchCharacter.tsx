@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
-const CHARACTER_MODEL_URL = '/assets/character.glb'
+const CHARACTER_MODEL_URL = '/assets/character_runtime.glb'
 const CHARACTER_HEIGHT = 5.4
 const STANDING_MARCH_ANIMATION = 'StandingMarch_HighKnee'
+const MAX_PIXEL_RATIO = 1.25
+const TARGET_FRAME_INTERVAL_MS = 1_000 / 30
 
 declare global {
   interface Window {
@@ -41,13 +43,11 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
     camera.position.set(0, 2.65, 12.5)
     camera.lookAt(0, 2.65, 0)
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
-    renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = THREE.PCFShadowMap
     host.append(renderer.domElement)
 
     const characterRoot = new THREE.Group()
@@ -59,24 +59,11 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
 
     const key = new THREE.DirectionalLight(0xfff3df, 2.5)
     key.position.set(-4, 8, 7)
-    key.castShadow = true
-    key.shadow.mapSize.set(1024, 1024)
-    key.shadow.camera.left = -4
-    key.shadow.camera.right = 4
-    key.shadow.camera.top = 7
-    key.shadow.camera.bottom = -1
     scene.add(key)
 
     const rim = new THREE.DirectionalLight(0xe7efff, 1.35)
     rim.position.set(5, 5, -5)
     scene.add(rim)
-
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.ShadowMaterial({ color: 0x536963, opacity: 0.16 }))
-    ground.name = 'contact-shadow-ground'
-    ground.rotation.x = -Math.PI / 2
-    ground.position.y = -0.145
-    ground.receiveShadow = true
-    scene.add(ground)
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const timer = new THREE.Timer()
@@ -88,6 +75,8 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
     let marchClip: THREE.AnimationClip | null = null
     let hasFixedCapturePose = false
     let idleRotation = 0
+    let lastRenderedAt = 0
+    let needsRender = true
 
     const setPose = (elapsedSeconds: number | null) => {
       if (!mixer || !marchAction || !marchClip) return
@@ -95,6 +84,7 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
       if (elapsedSeconds === null) {
         hasFixedCapturePose = false
         timer.reset()
+        needsRender = true
         return
       }
 
@@ -103,11 +93,16 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
       characterRoot.rotation.y = 0
       const loopTime = ((elapsedSeconds % marchClip.duration) + marchClip.duration) % marchClip.duration
       mixer.setTime(loopTime)
+      needsRender = true
     }
 
     const handleReducedMotionChange = () => {
-      if (reducedMotion.matches) mixer?.setTime(0)
+      if (reducedMotion.matches) {
+        mixer?.setTime(0)
+        characterRoot.rotation.y = 0
+      }
       timer.reset()
+      needsRender = true
     }
     reducedMotion.addEventListener('change', handleReducedMotionChange)
 
@@ -126,12 +121,6 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
         const scale = CHARACTER_HEIGHT / size.y
         model.scale.setScalar(scale)
         model.position.set(-center.x * scale, -bounds.min.y * scale - 0.145, -center.z * scale)
-        model.traverse((object) => {
-          if (object instanceof THREE.Mesh) {
-            object.castShadow = true
-            object.receiveShadow = true
-          }
-        })
         characterRoot.add(model)
 
         marchClip = THREE.AnimationClip.findByName(animations, STANDING_MARCH_ANIMATION) ?? null
@@ -147,6 +136,7 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
 
         window.__IMG2THREEJS_READY__ = true
         window.__IMG2THREEJS_CAPTURE__ = createCaptureApi(camera, renderer, characterRoot, setPose)
+        needsRender = true
       },
       undefined,
       (error) => console.error('Failed to load the standing march character model.', error),
@@ -158,6 +148,7 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
       renderer.setSize(width, height, false)
       camera.aspect = width / height
       camera.updateProjectionMatrix()
+      needsRender = true
     }
 
     const observer = new ResizeObserver(resize)
@@ -165,16 +156,29 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
     resize()
 
     const render = (timestamp: number) => {
-      timer.update(timestamp)
-      const deltaSeconds = Math.min(timer.getDelta(), 0.1)
-      if (mixer && !isPausedRef.current && !reducedMotion.matches && !hasFixedCapturePose) {
-        mixer.update(deltaSeconds)
-      }
-      if (!isPausedRef.current && !reducedMotion.matches && !hasFixedCapturePose) {
+      const activeMixer = mixer
+      const isAnimating = activeMixer !== null
+        && !isPausedRef.current
+        && !reducedMotion.matches
+        && !hasFixedCapturePose
+        && !document.hidden
+      const isFrameDue = timestamp - lastRenderedAt >= TARGET_FRAME_INTERVAL_MS
+
+      // Avoid spending GPU time on duplicate frames or static states while keeping capture and resize renders responsive.
+      if (isAnimating && isFrameDue) {
+        timer.update(timestamp)
+        const deltaSeconds = Math.min(timer.getDelta(), 0.1)
+        activeMixer.update(deltaSeconds)
         idleRotation = Math.sin(timestamp / 1800) * 0.015
+        characterRoot.rotation.y = idleRotation
+        renderer.render(scene, camera)
+        lastRenderedAt = timestamp
+        needsRender = false
+      } else if (needsRender) {
+        renderer.render(scene, camera)
+        lastRenderedAt = timestamp
+        needsRender = false
       }
-      characterRoot.rotation.y = reducedMotion.matches ? 0 : idleRotation
-      renderer.render(scene, camera)
       frame = window.requestAnimationFrame(render)
     }
     frame = window.requestAnimationFrame(render)
@@ -189,8 +193,6 @@ export function StandingMarchCharacter({ isPaused, label }: StandingMarchCharact
       const animatedModel = characterRoot.children[0]
       if (animatedModel) mixer?.uncacheRoot(animatedModel)
       disposeModel(characterRoot)
-      ground.geometry.dispose()
-      ;(ground.material as THREE.Material).dispose()
       renderer.dispose()
       renderer.domElement.remove()
       delete window.__IMG2THREEJS_READY__
