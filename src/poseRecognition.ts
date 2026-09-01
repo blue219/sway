@@ -20,6 +20,7 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
   let activeDurationMs = 0
   let lastRecognisedAt: number | null = null
   let previousPredictionWasRecognised = false
+  let hasObservedNeutralStance = false
 
   function getResult(): MovementTimerResult {
     return { completed: phase === 'complete', phase, activeDurationMs }
@@ -28,6 +29,12 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
   return {
     observe(prediction: PosePrediction, timestamp: number): MovementTimerResult {
       if (phase === 'complete') {
+        return getResult()
+      }
+
+      const isNeutralStance = prediction.className === 'Neutral' && prediction.probability >= confidenceThreshold
+      if (!hasObservedNeutralStance) {
+        hasObservedNeutralStance = isNeutralStance
         return getResult()
       }
 

@@ -124,7 +124,9 @@ describe('CameraPreview', () => {
       dispose: vi.fn(),
       estimatePose: vi.fn().mockResolvedValue({ posenetOutput: {} }),
       getClassLabels: () => ['Neutral', 'Standing March'],
-      predict: vi.fn().mockResolvedValue([{ className: 'Standing March', probability: 0.9 }]),
+      predict: vi.fn()
+        .mockResolvedValueOnce([{ className: 'Neutral', probability: 0.9 }])
+        .mockResolvedValue([{ className: 'Standing March', probability: 0.9 }]),
     })
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
     vi.stubGlobal('requestAnimationFrame', requestAnimationFrame)
@@ -137,6 +139,9 @@ describe('CameraPreview', () => {
 
     await waitFor(() => expect(frameCallback).toBeDefined())
     frameCallback?.(0)
+
+    await waitFor(() => expect(requestAnimationFrame).toHaveBeenCalledTimes(2))
+    frameCallback?.(16)
 
     await waitFor(() => expect(recognitionState).toHaveBeenLastCalledWith(true))
   })
