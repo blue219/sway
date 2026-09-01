@@ -1,77 +1,56 @@
-export const confidenceThreshold = 0.85
-export const stablePoseDurationMs = 400
-export const repetitionsPerMovement = 5
+export const confidenceThreshold = 0.7
+export const requiredMovementDurationMs = 5_000
+export const recognitionGapToleranceMs = 300
 
-export type RepCounterPhase = 'waitingForInitialNeutral' | 'waitingForMovement' | 'waitingForNeutral' | 'complete'
+export type MovementTimerPhase = 'waitingForMovement' | 'tracking' | 'paused' | 'complete'
 
 export type PosePrediction = {
   className: string
   probability: number
 }
 
-export type RepCounterResult = {
+export type MovementTimerResult = {
   completed: boolean
-  phase: RepCounterPhase
-  repetitions: number
+  phase: MovementTimerPhase
+  activeDurationMs: number
 }
 
-export function createRepCounter(targetClassName: string, targetRepetitions = repetitionsPerMovement) {
-  let phase: RepCounterPhase = 'waitingForInitialNeutral'
-  let repetitions = 0
-  let candidateClassName: string | null = null
-  let candidateStartedAt: number | null = null
-  let lastStableClassName: string | null = null
+export function createMovementTimer(targetClassName: string, requiredDurationMs = requiredMovementDurationMs) {
+  let phase: MovementTimerPhase = 'waitingForMovement'
+  let activeDurationMs = 0
+  let lastRecognisedAt: number | null = null
 
-  function getResult(): RepCounterResult {
-    return { completed: phase === 'complete', phase, repetitions }
-  }
-
-  function resetCandidate() {
-    candidateClassName = null
-    candidateStartedAt = null
-  }
-
-  function applyStableClass(className: string) {
-    if (className === lastStableClassName) {
-      return
-    }
-
-    lastStableClassName = className
-    if (phase === 'waitingForInitialNeutral' && className === 'Neutral') {
-      phase = 'waitingForMovement'
-      return
-    }
-
-    if (phase === 'waitingForMovement' && className === targetClassName) {
-      repetitions += 1
-      phase = repetitions === targetRepetitions ? 'complete' : 'waitingForNeutral'
-      return
-    }
-
-    if (phase === 'waitingForNeutral' && className === 'Neutral') {
-      phase = 'waitingForMovement'
-    }
+  function getResult(): MovementTimerResult {
+    return { completed: phase === 'complete', phase, activeDurationMs }
   }
 
   return {
-    observe(prediction: PosePrediction, timestamp: number): RepCounterResult {
+    observe(prediction: PosePrediction, timestamp: number): MovementTimerResult {
       if (phase === 'complete') {
         return getResult()
       }
 
-      if (prediction.probability < confidenceThreshold) {
-        resetCandidate()
+      const isRecognisedMovement = prediction.className === targetClassName && prediction.probability >= confidenceThreshold
+      if (!isRecognisedMovement) {
+        if (lastRecognisedAt !== null && timestamp - lastRecognisedAt > recognitionGapToleranceMs) {
+          phase = 'paused'
+        }
         return getResult()
       }
 
-      if (prediction.className !== candidateClassName) {
-        candidateClassName = prediction.className
-        candidateStartedAt = timestamp
+      if (phase === 'waitingForMovement' || phase === 'paused') {
+        phase = 'tracking'
+        lastRecognisedAt = timestamp
         return getResult()
       }
 
-      if (candidateStartedAt !== null && timestamp - candidateStartedAt >= stablePoseDurationMs) {
-        applyStableClass(prediction.className)
+      if (lastRecognisedAt !== null) {
+        activeDurationMs += timestamp - lastRecognisedAt
+        lastRecognisedAt = timestamp
+      }
+      if (activeDurationMs >= requiredDurationMs) {
+        activeDurationMs = requiredDurationMs
+        phase = 'complete'
       }
 
       return getResult()

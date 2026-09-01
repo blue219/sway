@@ -8,11 +8,11 @@ const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'St
 let nextRecognitionStatus: RecognitionStatus = { kind: 'ready' }
 
 vi.mock('./components/CameraPreview', () => ({
-  CameraPreview: ({ isTracking, onRecognitionStatusChange, onComplete, onRepetitionsChange }: {
+  CameraPreview: ({ isTracking, onRecognitionStatusChange, onComplete, onActiveDurationChange }: {
     isTracking: boolean
     onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
     onComplete: () => void
-    onRepetitionsChange: (repetitions: number) => void
+    onActiveDurationChange: (activeDurationMs: number) => void
   }) => {
     useEffect(() => {
       onRecognitionStatusChange(nextRecognitionStatus)
@@ -23,7 +23,7 @@ vi.mock('./components/CameraPreview', () => ({
         disabled={!isTracking}
         type="button"
         onClick={() => {
-          onRepetitionsChange(5)
+          onActiveDurationChange(5_000)
           onComplete()
         }}
       >
@@ -55,7 +55,7 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
-  it('starts a five-second countdown after the fifth recognised repetition, then advances', () => {
+  it('starts a five-second countdown after five seconds of recognised movement, then advances', () => {
     vi.useFakeTimers()
     render(<App />)
 

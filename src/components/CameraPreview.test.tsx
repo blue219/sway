@@ -26,18 +26,18 @@ function createCameraStream() {
 function renderPreview(isTracking = false, movementLabel = 'Side Arm Raise') {
   const recognitionStatus = vi.fn()
   const completion = vi.fn()
-  const repetitions = vi.fn()
+  const activeDuration = vi.fn()
   const view = render(
     <CameraPreview
       isTracking={isTracking}
       movementLabel={movementLabel}
       onRecognitionStatusChange={recognitionStatus}
       onComplete={completion}
-      onRepetitionsChange={repetitions}
+      onActiveDurationChange={activeDuration}
     />,
   )
 
-  return { recognitionStatus, completion, repetitions, ...view }
+  return { recognitionStatus, completion, activeDuration, ...view }
 }
 
 afterEach(() => {
@@ -72,7 +72,7 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/pose/model.json', '/models/pose/metadata.json'))
     await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
     await waitFor(() => expect(requestAnimationFrame).toHaveBeenCalledOnce())
-    expect(screen.getByText('Please return to a neutral pose to begin counting.')).toBeInTheDocument()
+    expect(screen.getByText('Start Side Arm Raise. 0.0/5.0 seconds recognised.')).toBeInTheDocument()
 
     unmount()
     expect(track.stop).toHaveBeenCalledOnce()

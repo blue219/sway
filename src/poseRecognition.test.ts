@@ -1,46 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { createRepCounter } from './poseRecognition'
+import { createMovementTimer, requiredMovementDurationMs } from './poseRecognition'
 
-const confidence = 0.9
+describe('movement timer', () => {
+  it('completes after five seconds of continuous recognised movement at 70% confidence', () => {
+    const timer = createMovementTimer('Standing March')
 
-function observeStable(counter: ReturnType<typeof createRepCounter>, className: string, at: number) {
-  counter.observe({ className, probability: confidence }, at)
-  return counter.observe({ className, probability: confidence }, at + 400)
-}
-
-describe('pose repetition counter', () => {
-  it('counts each target movement once and requires neutral before the next repetition', () => {
-    const counter = createRepCounter('Side Arm Raise')
-
-    expect(observeStable(counter, 'Neutral', 0)).toMatchObject({ phase: 'waitingForMovement', repetitions: 0 })
-    expect(observeStable(counter, 'Side Arm Raise', 500)).toMatchObject({ phase: 'waitingForNeutral', repetitions: 1 })
-    expect(observeStable(counter, 'Side Arm Raise', 1_000)).toMatchObject({ phase: 'waitingForNeutral', repetitions: 1 })
-    expect(observeStable(counter, 'Neutral', 1_500)).toMatchObject({ phase: 'waitingForMovement', repetitions: 1 })
-    expect(observeStable(counter, 'Side Arm Raise', 2_000)).toMatchObject({ phase: 'waitingForNeutral', repetitions: 2 })
+    expect(timer.observe({ className: 'Standing March', probability: 0.7 }, 0)).toMatchObject({ activeDurationMs: 0, phase: 'tracking' })
+    expect(timer.observe({ className: 'Standing March', probability: 0.7 }, requiredMovementDurationMs - 1)).toMatchObject({ completed: false, activeDurationMs: requiredMovementDurationMs - 1 })
+    expect(timer.observe({ className: 'Standing March', probability: 0.7 }, requiredMovementDurationMs)).toMatchObject({ completed: true, activeDurationMs: requiredMovementDurationMs, phase: 'complete' })
   })
 
-  it('ignores low-confidence, unstable, and incorrect predictions', () => {
-    const counter = createRepCounter('Standing March')
+  it('does not count low-confidence or different movements', () => {
+    const timer = createMovementTimer('Standing March')
 
-    counter.observe({ className: 'Neutral', probability: 0.84 }, 0)
-    expect(counter.observe({ className: 'Neutral', probability: confidence }, 400)).toMatchObject({ phase: 'waitingForInitialNeutral', repetitions: 0 })
-    expect(observeStable(counter, 'Shallow Squat', 900)).toMatchObject({ phase: 'waitingForInitialNeutral', repetitions: 0 })
-    expect(observeStable(counter, 'Neutral', 1_400)).toMatchObject({ phase: 'waitingForMovement', repetitions: 0 })
-    expect(observeStable(counter, 'Shallow Squat', 1_900)).toMatchObject({ phase: 'waitingForMovement', repetitions: 0 })
+    expect(timer.observe({ className: 'Standing March', probability: 0.69 }, 0)).toMatchObject({ activeDurationMs: 0, phase: 'waitingForMovement' })
+    expect(timer.observe({ className: 'Neutral', probability: 0.95 }, 500)).toMatchObject({ activeDurationMs: 0, phase: 'waitingForMovement' })
   })
 
-  it('completes after the fifth neutral-to-target transition', () => {
-    const counter = createRepCounter('Side Leg Lift')
-    observeStable(counter, 'Neutral', 0)
+  it('pauses after a 300ms recognition gap and continues without resetting progress', () => {
+    const timer = createMovementTimer('Standing March')
 
-    let result = counter.observe({ className: 'Neutral', probability: confidence }, 400)
-    for (let repetition = 1; repetition <= 5; repetition += 1) {
-      result = observeStable(counter, 'Side Leg Lift', repetition * 1_000)
-      if (repetition < 5) {
-        observeStable(counter, 'Neutral', repetition * 1_000 + 500)
-      }
-    }
-
-    expect(result).toMatchObject({ phase: 'complete', repetitions: 5, completed: true })
+    timer.observe({ className: 'Standing March', probability: 0.9 }, 0)
+    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_000)).toMatchObject({ activeDurationMs: 1_000, phase: 'tracking' })
+    expect(timer.observe({ className: 'Neutral', probability: 0.9 }, 1_301)).toMatchObject({ activeDurationMs: 1_000, phase: 'paused' })
+    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 2_000)).toMatchObject({ activeDurationMs: 1_000, phase: 'tracking' })
+    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 3_000)).toMatchObject({ activeDurationMs: 2_000, phase: 'tracking' })
   })
 })

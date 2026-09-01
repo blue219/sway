@@ -26,7 +26,7 @@ function App() {
   const [fallbackTimerEnabled, setFallbackTimerEnabled] = useState(false)
   const [fallbackPromptReason, setFallbackPromptReason] = useState<string | null>(null)
   const [playRequest, setPlayRequest] = useState(0)
-  const [repetitions, setRepetitions] = useState(0)
+  const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [secondsRemaining, setSecondsRemaining] = useState(countdownSeconds)
   const [points, setPoints] = useState(0)
   const movementIndexRef = useRef(0)
@@ -66,7 +66,7 @@ function App() {
 
     movementIndexRef.current = currentMovementIndex + 1
     setMovementIndex(currentMovementIndex + 1)
-    setRepetitions(0)
+    setActiveDurationMs(0)
     setPlayRequest((request) => request + 1)
 
     if (fallbackTimerEnabled) {
@@ -135,13 +135,13 @@ function App() {
     setFallbackTimerEnabled(false)
     setFallbackPromptReason(null)
     setPlayRequest(0)
-    setRepetitions(0)
+    setActiveDurationMs(0)
     setSecondsRemaining(countdownSeconds)
     setPoints(0)
   }
 
   function startMovement() {
-    setRepetitions(0)
+    setActiveDurationMs(0)
     setFallbackPromptReason(null)
     setPlayRequest((request) => request + 1)
 
@@ -167,8 +167,8 @@ function App() {
     setRecognitionStatus(nextRecognitionStatus)
   }, [])
 
-  const handleRepetitionsChange = useCallback((nextRepetitions: number) => {
-    setRepetitions(nextRepetitions)
+  const handleActiveDurationChange = useCallback((nextActiveDurationMs: number) => {
+    setActiveDurationMs(nextActiveDurationMs)
   }, [])
 
   const handleRecognitionComplete = useCallback(() => {
@@ -178,7 +178,7 @@ function App() {
   function continueWithoutRecognition() {
     setFallbackTimerEnabled(true)
     setFallbackPromptReason(null)
-    setRepetitions(0)
+    setActiveDurationMs(0)
     beginCountdown()
   }
 
@@ -240,12 +240,12 @@ function App() {
             isWaitingForRecognition={movementPhase === 'waitingForRecognition'}
             movement={movements[movementOrder[movementIndex]]}
             playRequest={playRequest}
-            repetitions={repetitions}
+            activeDurationMs={activeDurationMs}
             secondsRemaining={secondsRemaining}
             totalMovements={movements.length}
             onRecognitionComplete={handleRecognitionComplete}
             onRecognitionStatusChange={handleRecognitionStatusChange}
-            onRepetitionsChange={handleRepetitionsChange}
+            onActiveDurationChange={handleActiveDurationChange}
             onStart={startMovement}
           />
         ) : null}

@@ -23,10 +23,10 @@ pnpm build
 
 ## Interaction and accessibility
 
-- The round opens on one of five preloaded movement videos. Select **Start** to begin playback and recognition from the start. After five recognised repetitions, the action runs a five-second countdown before the next movement begins.
+- The round opens on one of five preloaded movement videos. Select **Start** to begin playback and recognition from the start. A movement completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. The action then runs a five-second countdown before the next movement begins.
 - The movement demonstrator loops the selected responsive native video player asset.
 - The movement page uses a dedicated two-card layout: the demonstration is on the left, while a live browser camera preview, recognition status, and Start button are on the right. The preview requests video-only permission, does not record or transmit footage, and stops its camera track when the movement page unmounts.
-- Start is available while the camera and pose model initialise. A participant must first hold a neutral pose, then complete five stable neutral-to-target-pose transitions for each movement. Returning to neutral is required before another repetition can count. After the fifth repetition, the movement runs a five-second countdown before advancing. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift in a random, non-repeating order.
+- Start is available while the camera and pose model initialise. A participant earns recognised movement time whenever the current movement is predicted with at least 70% confidence. Recognition can be continuous; returning to neutral is not required. Gaps longer than 300 milliseconds pause the timer without clearing prior progress. After five seconds of recognised movement time, the movement runs a five-second countdown before advancing. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift in a random, non-repeating order.
 - After all five movements, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - On the quiz, use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
 - Each correct answer earns 10 Wellbeing Points, for a maximum of 50 points per round.

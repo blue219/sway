@@ -11,13 +11,13 @@ type MovementScreenProps = {
   isTracking: boolean
   isWaitingForRecognition: boolean
   movement: Movement
-  repetitions: number
+  activeDurationMs: number
   secondsRemaining: number
   totalMovements: number
   playRequest: number
   onRecognitionComplete: () => void
   onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
-  onRepetitionsChange: (repetitions: number) => void
+  onActiveDurationChange: (activeDurationMs: number) => void
   onStart: () => void
 }
 
@@ -28,13 +28,13 @@ export function MovementScreen({
   isTracking,
   isWaitingForRecognition,
   movement,
-  repetitions,
+  activeDurationMs,
   secondsRemaining,
   totalMovements,
   playRequest,
   onRecognitionComplete,
   onRecognitionStatusChange,
-  onRepetitionsChange,
+  onActiveDurationChange,
   onStart,
 }: MovementScreenProps) {
   const statusLabel = isCountingDown
@@ -70,7 +70,7 @@ export function MovementScreen({
         <div className="movement-camera-heading">
           <div>
             <h2>{statusLabel}</h2>
-            <p className="movement-repetition-count" aria-live="polite">{repetitions}/5 completed</p>
+            <p className="movement-repetition-count" aria-live="polite">{(activeDurationMs / 1_000).toFixed(1)} / 5.0 seconds recognised</p>
           </div>
           <Button className="start-movement-button" disabled={isTracking || isWaitingForRecognition || isCountingDown} htmlType="button" size="large" type="primary" onClick={onStart}>
             Start
@@ -82,7 +82,7 @@ export function MovementScreen({
             movementLabel={movement.title}
             onComplete={onRecognitionComplete}
             onRecognitionStatusChange={onRecognitionStatusChange}
-            onRepetitionsChange={onRepetitionsChange}
+            onActiveDurationChange={onActiveDurationChange}
           />
         </div>
       </section>
