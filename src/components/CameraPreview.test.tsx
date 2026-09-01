@@ -25,14 +25,14 @@ function createCameraStream() {
   return { stream, track }
 }
 
-function renderPreview(isTracking = false) {
+function renderPreview(isTracking = false, movementLabel = 'Side Arm Raise') {
   const recognitionStatus = vi.fn()
   const completion = vi.fn()
   const repetitions = vi.fn()
   const view = render(
     <CameraPreview
       isTracking={isTracking}
-      movementLabel="Side Arm Raise"
+      movementLabel={movementLabel}
       onRecognitionStatusChange={recognitionStatus}
       onComplete={completion}
       onRepetitionsChange={repetitions}
@@ -96,7 +96,7 @@ describe('CameraPreview', () => {
     const { stream } = createCameraStream()
     const getUserMedia = vi.fn().mockResolvedValue(stream)
     const dispose = vi.fn()
-    mockLoad.mockResolvedValue({ dispose, getClassLabels: () => ['Neutral', 'Side Arm Raise'] })
+    mockLoad.mockResolvedValue({ dispose, getClassLabels: () => ['Neutral', 'Standing March'] })
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
 
     const { recognitionStatus } = renderPreview()
@@ -104,8 +104,22 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(video.srcObject).toBe(stream))
     fireEvent.playing(video)
 
-    expect(await screen.findByText('Pose model labels do not match the required movements.')).toBeInTheDocument()
-    expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'unavailable', message: 'Pose model labels do not match the required movements.' })
+    expect(await screen.findByText('Pose model does not support this movement.')).toBeInTheDocument()
+    expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'unavailable', message: 'Pose model does not support this movement.' })
     expect(dispose).toHaveBeenCalledOnce()
+  })
+
+  it('accepts a two-class model for its matching movement', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Neutral', 'Standing March'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Standing March')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
   })
 })

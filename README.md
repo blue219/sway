@@ -56,3 +56,5 @@ The model labels must match these values exactly:
 - `Side Leg Lift`
 
 The app loads the model only from these local files. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
+
+A two-class model containing `Neutral` and one movement label is also supported for that movement only. The included model is trained for `Standing March`; all other movements use the existing unavailable/timeout fallback until a six-class model replaces it.

@@ -21,8 +21,11 @@ type CameraPreviewProps = {
   onRepetitionsChange: (repetitions: number) => void
 }
 
-function hasRequiredLabels(labels: string[]) {
-  return labels.length === requiredLabels.length && requiredLabels.every((label) => labels.includes(label))
+function hasRequiredLabels(labels: string[], movementLabel: string) {
+  const isCompleteModel = labels.length === requiredLabels.length && requiredLabels.every((label) => labels.includes(label))
+  const isMovementModel = labels.length === 2 && labels.includes('Neutral') && labels.includes(movementLabel)
+
+  return isCompleteModel || isMovementModel
 }
 
 function getUnavailableMessage(status: CameraStatus) {
@@ -32,7 +35,7 @@ function getUnavailableMessage(status: CameraStatus) {
     case 'unavailable':
       return 'Camera is unavailable.'
     case 'invalidModel':
-      return 'Pose model labels do not match the required movements.'
+      return 'Pose model does not support this movement.'
     case 'modelError':
       return 'Pose model files could not be loaded.'
     case 'recognitionError':
@@ -58,7 +61,7 @@ function getStatusMessage(
     case 'loadingModel':
       return 'Loading pose model…'
     case 'invalidModel':
-      return 'Pose model labels do not match the required movements.'
+      return 'Pose model does not support this movement.'
     case 'modelError':
       return 'Pose model files could not be loaded.'
     case 'recognitionError':
@@ -198,7 +201,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
           model.dispose()
           return
         }
-        if (!hasRequiredLabels(model.getClassLabels())) {
+        if (!hasRequiredLabels(model.getClassLabels(), movementLabel)) {
           model.dispose()
           setStatus('invalidModel')
           return
@@ -219,7 +222,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
       modelRef.current = undefined
       setModelReady(false)
     }
-  }, [cameraReady])
+  }, [cameraReady, movementLabel])
 
   useEffect(() => {
     if (cameraReady && modelReady && status === 'ready') {
