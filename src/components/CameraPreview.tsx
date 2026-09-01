@@ -194,8 +194,13 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
     setStatus('loadingModel')
     setModelReady(false)
 
-    void import('@teachablemachine/pose')
-      .then(({ load }) => load(modelUrl, metadataUrl))
+    void Promise.resolve()
+      .then(() => {
+        if (!window.tmPose) {
+          throw new Error('The local pose runtime is unavailable.')
+        }
+        return window.tmPose.load(modelUrl, metadataUrl)
+      })
       .then((model) => {
         if (!isCurrent) {
           model.dispose()

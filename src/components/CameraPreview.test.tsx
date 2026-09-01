@@ -1,10 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CameraPreview } from './CameraPreview'
 
-const { mockLoad } = vi.hoisted(() => ({ mockLoad: vi.fn() }))
-
-vi.mock('@teachablemachine/pose', () => ({ load: mockLoad }))
+const mockLoad = vi.fn()
 
 const requiredLabels = ['Neutral', 'Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
 
@@ -50,6 +48,10 @@ afterEach(() => {
 })
 
 describe('CameraPreview', () => {
+  beforeEach(() => {
+    window.tmPose = { load: mockLoad }
+  })
+
   it('loads a valid local model after the camera is playing and releases model and camera resources on unmount', async () => {
     const { stream, track } = createCameraStream()
     const dispose = vi.fn()
