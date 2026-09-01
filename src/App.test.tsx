@@ -6,17 +6,21 @@ import App from './App'
 
 const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
 let nextRecognitionStatus: RecognitionStatus = { kind: 'ready' }
+let nextMovementRecognised = false
 
 vi.mock('./components/CameraPreview', () => ({
-  CameraPreview: ({ isTracking, onRecognitionStatusChange, onComplete, onActiveDurationChange }: {
+  CameraPreview: ({ isTracking, movementLabel, onRecognitionStatusChange, onComplete, onActiveDurationChange, onRecognitionStateChange }: {
     isTracking: boolean
+    movementLabel: string
     onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
     onComplete: () => void
     onActiveDurationChange: (activeDurationMs: number) => void
+    onRecognitionStateChange: (isRecognised: boolean | null) => void
   }) => {
     useEffect(() => {
       onRecognitionStatusChange(nextRecognitionStatus)
-    }, [onRecognitionStatusChange])
+      onRecognitionStateChange(isTracking ? nextMovementRecognised : null)
+    }, [isTracking, movementLabel, onRecognitionStateChange, onRecognitionStatusChange])
 
     return (
       <button
@@ -37,7 +41,6 @@ function startAndCompleteMovementSequence() {
   fireEvent.click(screen.getByRole('button', { name: 'Start' }))
   for (let movement = 0; movement < 5; movement += 1) {
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
-    completeCountdown()
   }
 }
 
@@ -50,29 +53,36 @@ function completeCountdown() {
 afterEach(() => {
   cleanup()
   nextRecognitionStatus = { kind: 'ready' }
+  nextMovementRecognised = false
   vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
 describe('Whakakori Together round', () => {
-  it('starts a five-second countdown after five seconds of recognised movement, then advances', () => {
+  it('advances immediately after five seconds of recognised movement', () => {
     vi.useFakeTimers()
     render(<App />)
 
     expect(movementTitles).toContain(screen.getByRole('heading', { level: 1 }).textContent)
     expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Start' }).closest('.movement-action-card')).not.toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
 
-    expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
-    expect(screen.getByText('Movement complete')).toBeInTheDocument()
-    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
-
-    completeCountdown()
-
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
+    expect(screen.queryByLabelText('5 seconds remaining')).not.toBeInTheDocument()
+  })
+
+  it('shows the live recognition state beside Hold while tracking', () => {
+    nextMovementRecognised = true
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+
+    const recognitionIndicator = screen.getByLabelText('Movement recognised')
+    expect(recognitionIndicator.closest('.movement-progress')).toHaveTextContent('✓Hold0.0/5 S')
   })
 
   it('offers a timer fallback when recognition is unavailable and applies it to later movements', () => {
@@ -88,7 +98,7 @@ describe('Whakakori Together round', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
-    expect(screen.getByText('Timer mode')).toBeInTheDocument()
+    expect(screen.getByText('Next movement in')).toBeInTheDocument()
     completeCountdown()
 
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()

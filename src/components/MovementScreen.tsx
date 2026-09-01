@@ -1,4 +1,6 @@
 import { Button } from 'animal-island-ui'
+import { requiredMovementDurationMs } from '../poseRecognition'
+import { useState } from 'react'
 import type { RecognitionStatus } from './CameraPreview'
 import type { Movement } from '../game'
 import { CameraPreview } from './CameraPreview'
@@ -6,7 +8,6 @@ import { MovementVideo } from './MovementVideo'
 
 type MovementScreenProps = {
   currentMovement: number
-  fallbackTimerEnabled: boolean
   isCountingDown: boolean
   isTracking: boolean
   isWaitingForRecognition: boolean
@@ -23,7 +24,6 @@ type MovementScreenProps = {
 
 export function MovementScreen({
   currentMovement,
-  fallbackTimerEnabled,
   isCountingDown,
   isTracking,
   isWaitingForRecognition,
@@ -37,11 +37,11 @@ export function MovementScreen({
   onActiveDurationChange,
   onStart,
 }: MovementScreenProps) {
-  const statusLabel = isCountingDown
-    ? fallbackTimerEnabled ? 'Timer mode' : 'Movement complete'
-    : isTracking ? 'Recognizing movement'
-    : isWaitingForRecognition ? 'Checking pose recognition'
-    : 'Movement ready'
+  const [isMovementRecognised, setIsMovementRecognised] = useState<boolean | null>(null)
+  const progressLabel = isCountingDown ? 'Next movement in' : 'Hold'
+  const progressValue = isCountingDown
+    ? `${secondsRemaining} s`
+    : `${(activeDurationMs / 1_000).toFixed(1)}/${requiredMovementDurationMs / 1_000} S`
 
   return (
     <main className="movement-screen" aria-labelledby="movement-title">
@@ -51,9 +51,14 @@ export function MovementScreen({
           <div className="movement-introduction">
             <h1 id="movement-title">{movement.title}</h1>
           </div>
-          <span aria-label={`Movement ${currentMovement} of ${totalMovements}`} className="movement-index">
-            {currentMovement}/{totalMovements}
-          </span>
+          <div className="movement-action-controls">
+            <span aria-label={`Movement ${currentMovement} of ${totalMovements}`} className="movement-index">
+              {currentMovement}/{totalMovements}
+            </span>
+            <Button className="start-movement-button" disabled={isTracking || isWaitingForRecognition || isCountingDown} htmlType="button" size="large" type="primary" onClick={onStart}>
+              Start
+            </Button>
+          </div>
         </div>
         <div className="movement-video-panel">
           <div className="movement-video-frame">
@@ -68,19 +73,18 @@ export function MovementScreen({
       </section>
       <section className="movement-camera-card" aria-label="Movement camera preview">
         <div className="movement-camera-heading">
-          <div>
-            <h2>{statusLabel}</h2>
-            <p className="movement-repetition-count" aria-live="polite">{(activeDurationMs / 1_000).toFixed(1)} / 5.0 seconds recognised</p>
+          <div className="movement-progress" aria-live="polite">
+            {isTracking && isMovementRecognised !== null ? <span aria-label={isMovementRecognised ? 'Movement recognised' : 'Movement not recognised'} className={`movement-recognition-indicator${isMovementRecognised ? ' movement-recognition-indicator-success' : ''}`}>{isMovementRecognised ? '✓' : '×'}</span> : null}
+            <span>{progressLabel}</span>
+            <strong>{progressValue}</strong>
           </div>
-          <Button className="start-movement-button" disabled={isTracking || isWaitingForRecognition || isCountingDown} htmlType="button" size="large" type="primary" onClick={onStart}>
-            Start
-          </Button>
         </div>
         <div className="camera-preview-panel">
           <CameraPreview
             isTracking={isTracking}
             movementLabel={movement.title}
             onComplete={onRecognitionComplete}
+            onRecognitionStateChange={setIsMovementRecognised}
             onRecognitionStatusChange={onRecognitionStatusChange}
             onActiveDurationChange={onActiveDurationChange}
           />

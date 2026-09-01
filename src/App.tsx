@@ -73,20 +73,10 @@ function App() {
       beginCountdown()
       return
     }
-
-    if (recognitionStatus.kind === 'ready') {
-      setMovementPhase('recognizing')
-      return
-    }
-
-    if (recognitionStatus.kind === 'unavailable') {
-      setMovementPhase('idle')
-      setFallbackPromptReason(recognitionStatus.message)
-      return
-    }
-
+    // Wait for the next movement's dedicated model before starting recognition.
+    setRecognitionStatus({ kind: 'checking' })
     setMovementPhase('waitingForRecognition')
-  }, [beginCountdown, fallbackTimerEnabled, recognitionStatus])
+  }, [beginCountdown, fallbackTimerEnabled])
 
   useEffect(() => {
     if (movementPhase !== 'countdown') {
@@ -172,8 +162,8 @@ function App() {
   }, [])
 
   const handleRecognitionComplete = useCallback(() => {
-    beginCountdown()
-  }, [beginCountdown])
+    advanceMovement()
+  }, [advanceMovement])
 
   function continueWithoutRecognition() {
     setFallbackTimerEnabled(true)
@@ -234,7 +224,6 @@ function App() {
         {screen === 'movement' ? (
           <MovementScreen
             currentMovement={movementIndex + 1}
-            fallbackTimerEnabled={fallbackTimerEnabled}
             isCountingDown={movementPhase === 'countdown'}
             isTracking={movementPhase === 'recognizing'}
             isWaitingForRecognition={movementPhase === 'waitingForRecognition'}

@@ -27,6 +27,7 @@ function renderPreview(isTracking = false, movementLabel = 'Side Arm Raise') {
   const recognitionStatus = vi.fn()
   const completion = vi.fn()
   const activeDuration = vi.fn()
+  const recognitionState = vi.fn()
   const view = render(
     <CameraPreview
       isTracking={isTracking}
@@ -34,10 +35,11 @@ function renderPreview(isTracking = false, movementLabel = 'Side Arm Raise') {
       onRecognitionStatusChange={recognitionStatus}
       onComplete={completion}
       onActiveDurationChange={activeDuration}
+      onRecognitionStateChange={recognitionState}
     />,
   )
 
-  return { recognitionStatus, completion, activeDuration, ...view }
+  return { recognitionStatus, completion, activeDuration, recognitionState, ...view }
 }
 
 afterEach(() => {
@@ -63,7 +65,7 @@ describe('CameraPreview', () => {
     vi.stubGlobal('requestAnimationFrame', requestAnimationFrame)
     vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame)
 
-    const { recognitionStatus, unmount } = renderPreview(true, 'Standing March')
+    const { recognitionStatus, recognitionState, unmount } = renderPreview(true, 'Standing March')
     const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
     await waitFor(() => expect(video.srcObject).toBe(stream))
     Object.defineProperty(video, 'requestVideoFrameCallback', { configurable: true, value: undefined })
@@ -72,7 +74,7 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/pose/model.json', '/models/pose/metadata.json'))
     await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
     await waitFor(() => expect(requestAnimationFrame).toHaveBeenCalledOnce())
-    expect(screen.getByText('Start Standing March. 0.0/5.0 seconds recognised.')).toBeInTheDocument()
+    expect(recognitionState).toHaveBeenLastCalledWith(false)
 
     unmount()
     expect(track.stop).toHaveBeenCalledOnce()
@@ -91,8 +93,7 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(video.srcObject).toBe(stream))
     fireEvent.playing(video)
 
-    expect(await screen.findByText('Pose model files could not be loaded.')).toBeInTheDocument()
-    expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'unavailable', message: 'Pose model files could not be loaded.' })
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'unavailable', message: 'Pose model files could not be loaded.' }))
   })
 
   it('rejects a model with unexpected labels', async () => {
@@ -107,9 +108,37 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(video.srcObject).toBe(stream))
     fireEvent.playing(video)
 
-    expect(await screen.findByText('Pose model does not support this movement.')).toBeInTheDocument()
-    expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'unavailable', message: 'Pose model does not support this movement.' })
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'unavailable', message: 'Pose model does not support this movement.' }))
     expect(dispose).toHaveBeenCalledOnce()
+  })
+
+  it('shows a green check while the target movement is recognised', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    let frameCallback: FrameRequestCallback | undefined
+    const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback
+      return 12
+    })
+    mockLoad.mockResolvedValue({
+      dispose: vi.fn(),
+      estimatePose: vi.fn().mockResolvedValue({ posenetOutput: {} }),
+      getClassLabels: () => ['Neutral', 'Standing March'],
+      predict: vi.fn().mockResolvedValue([{ className: 'Standing March', probability: 0.9 }]),
+    })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrame)
+
+    const { recognitionState } = renderPreview(true, 'Standing March')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    Object.defineProperty(video, 'readyState', { configurable: true, value: HTMLMediaElement.HAVE_CURRENT_DATA })
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(frameCallback).toBeDefined())
+    frameCallback?.(0)
+
+    await waitFor(() => expect(recognitionState).toHaveBeenLastCalledWith(true))
   })
 
   it('accepts a two-class model for its matching movement', async () => {

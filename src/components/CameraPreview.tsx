@@ -1,6 +1,6 @@
 import type { CustomPoseNet } from '@teachablemachine/pose'
 import { useEffect, useRef, useState } from 'react'
-import { createMovementTimer, requiredMovementDurationMs, type MovementTimerPhase } from '../poseRecognition'
+import { createMovementTimer, type MovementTimerPhase } from '../poseRecognition'
 
 const defaultModelUrls = {
   model: '/models/pose/model.json',
@@ -40,6 +40,7 @@ type CameraPreviewProps = {
   onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
   onComplete: () => void
   onActiveDurationChange: (activeDurationMs: number) => void
+  onRecognitionStateChange: (isRecognised: boolean | null) => void
 }
 
 function hasRequiredLabels(labels: string[], movementLabel: string) {
@@ -70,46 +71,7 @@ function getUnavailableMessage(status: CameraStatus) {
   }
 }
 
-function getStatusMessage(
-  status: CameraStatus,
-  deviceName: string | null,
-  phase: MovementTimerPhase | null,
-  activeDurationMs: number,
-  movementLabel: string,
-  prediction: string | null,
-) {
-  switch (status) {
-    case 'denied':
-      return 'Camera permission was not granted. Pose recognition cannot start.'
-    case 'unavailable':
-      return 'Camera is unavailable. Pose recognition cannot start.'
-    case 'loadingModel':
-      return 'Loading pose model…'
-    case 'invalidModel':
-      return 'Pose model does not support this movement.'
-    case 'modelError':
-      return 'Pose model files could not be loaded.'
-    case 'recognitionError':
-      return 'Pose recognition stopped unexpectedly.'
-    case 'ready':
-      switch (phase) {
-        case 'waitingForMovement':
-          return `Start ${movementLabel}. 0.0/${requiredMovementDurationMs / 1_000}.0 seconds recognised.`
-        case 'tracking':
-          return `${prediction === movementLabel ? movementLabel : 'Movement'} recognised. ${(activeDurationMs / 1_000).toFixed(1)}/${requiredMovementDurationMs / 1_000}.0 seconds.`
-        case 'paused':
-          return `Recognition paused. ${(activeDurationMs / 1_000).toFixed(1)}/${requiredMovementDurationMs / 1_000}.0 seconds.`
-        case 'complete':
-          return `${movementLabel} complete.`
-        default:
-          return deviceName ? `Camera and pose model ready: ${deviceName}` : 'Camera and pose model ready'
-      }
-    default:
-      return 'Starting camera preview…'
-  }
-}
-
-export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusChange, onComplete, onActiveDurationChange }: CameraPreviewProps) {
+export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusChange, onComplete, onActiveDurationChange, onRecognitionStateChange }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | undefined>(undefined)
   const modelRef = useRef<CustomPoseNet | undefined>(undefined)
@@ -117,9 +79,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
   const [cameraReady, setCameraReady] = useState(false)
   const [modelReady, setModelReady] = useState(false)
   const [status, setStatus] = useState<CameraStatus>('loadingCamera')
-  const [deviceName, setDeviceName] = useState<string | null>(null)
   const [phase, setPhase] = useState<MovementTimerPhase | null>(null)
-  const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [prediction, setPrediction] = useState<string | null>(null)
 
   function isVideoTrackLive() {
@@ -177,7 +137,6 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
           return
         }
 
-        setDeviceName(videoTracks[0].label || null)
         videoTracks.forEach((track) => {
           track.addEventListener('ended', () => {
             setCameraReady(false)
@@ -198,7 +157,6 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
       })
       .catch((error: unknown) => {
         if (!isCurrent) return
-        setDeviceName(null)
         setStatus(error instanceof DOMException && error.name === 'NotAllowedError' ? 'denied' : 'unavailable')
       })
 
@@ -273,6 +231,15 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
 
   useEffect(() => {
     if (!isTracking || !isAvailable) {
+      onRecognitionStateChange(null)
+      return
+    }
+
+    onRecognitionStateChange(phase === 'tracking' && prediction === movementLabel)
+  }, [isAvailable, isTracking, movementLabel, onRecognitionStateChange, phase, prediction])
+
+  useEffect(() => {
+    if (!isTracking || !isAvailable) {
       timerRef.current = undefined
       setPhase(null)
       setPrediction(null)
@@ -289,7 +256,6 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
     let isCurrent = true
     timerRef.current = createMovementTimer(movementLabel)
     setPhase('waitingForMovement')
-    setActiveDurationMs(0)
     onActiveDurationChange(0)
 
     const recognize = async () => {
@@ -306,7 +272,6 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
           if (result) {
             setPrediction(topPrediction.className)
             setPhase(result.phase)
-            setActiveDurationMs(result.activeDurationMs)
             onActiveDurationChange(result.activeDurationMs)
             if (result.completed) {
               onComplete()
@@ -329,16 +294,10 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
     }
   }, [isAvailable, isTracking, movementLabel, onActiveDurationChange, onComplete])
 
-  const isReady = status === 'ready'
-
   return (
     <div className="camera-preview-area">
       <video ref={videoRef} aria-label="Live camera preview" autoPlay muted playsInline onError={() => setStatus('unavailable')} onPlaying={handlePreviewPlaying} />
       <div aria-hidden="true" className="camera-guide" />
-      <div aria-live="polite" className={`camera-ready-status${isReady ? '' : ' camera-ready-status-warning'}`} role="status">
-        <span aria-hidden="true" className="camera-ready-mark">{isReady ? '✓' : '!'}</span>
-        <span>{getStatusMessage(status, deviceName, phase, activeDurationMs, movementLabel, prediction)}</span>
-      </div>
     </div>
   )
 }
