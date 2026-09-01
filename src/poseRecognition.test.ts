@@ -28,18 +28,18 @@ describe('movement timer', () => {
     expect(timer.observe({ className: 'Neutral', probability: 0.95 }, 500)).toMatchObject({ activeDurationMs: 0, phase: 'waitingForMovement' })
   })
 
-  it('stops accumulating as soon as the prediction is not the target movement', () => {
+  it('does not add time while the prediction is not the target movement', () => {
     const timer = createMovementTimer('Standing March')
 
     timer.observe({ className: 'Standing March', probability: 0.9 }, 0)
     expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 100)).toMatchObject({ activeDurationMs: 100, phase: 'tracking' })
     expect(timer.observe({ className: 'Neutral', probability: 0.99 }, 200)).toMatchObject({ activeDurationMs: 100 })
-    expect(timer.observe({ className: 'Neutral', probability: 0.99 }, 500)).toMatchObject({ activeDurationMs: 0, phase: 'paused' })
-    expect(timer.observe({ className: 'Standing March', probability: 0.69 }, 600)).toMatchObject({ activeDurationMs: 0, phase: 'paused' })
-    expect(timer.observe({ className: 'Side Arm Raise', probability: 0.99 }, 700)).toMatchObject({ activeDurationMs: 0, phase: 'paused' })
+    expect(timer.observe({ className: 'Neutral', probability: 0.99 }, 500)).toMatchObject({ activeDurationMs: 100, phase: 'paused' })
+    expect(timer.observe({ className: 'Standing March', probability: 0.69 }, 600)).toMatchObject({ activeDurationMs: 100, phase: 'paused' })
+    expect(timer.observe({ className: 'Side Arm Raise', probability: 0.99 }, 700)).toMatchObject({ activeDurationMs: 100, phase: 'paused' })
   })
 
-  it('resets progress after a 300ms recognition gap', () => {
+  it('preserves progress after a 300ms recognition gap', () => {
     const timer = createMovementTimer('Standing March')
 
     timer.observe({ className: 'Standing March', probability: 0.9 }, 0)
@@ -47,12 +47,12 @@ describe('movement timer', () => {
       timer.observe({ className: 'Standing March', probability: 0.9 }, timestamp)
     }
     expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_000)).toMatchObject({ activeDurationMs: 1_000, phase: 'tracking' })
-    expect(timer.observe({ className: 'Neutral', probability: 0.99 }, 1_301)).toMatchObject({ activeDurationMs: 0, phase: 'paused' })
-    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_400)).toMatchObject({ activeDurationMs: 0, phase: 'tracking' })
-    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_500)).toMatchObject({ activeDurationMs: 100, phase: 'tracking' })
+    expect(timer.observe({ className: 'Neutral', probability: 0.99 }, 1_301)).toMatchObject({ activeDurationMs: 1_000, phase: 'paused' })
+    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_400)).toMatchObject({ activeDurationMs: 1_000, phase: 'tracking' })
+    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_500)).toMatchObject({ activeDurationMs: 1_100, phase: 'tracking' })
   })
 
-  it('starts a fresh hold after target predictions are more than 300ms apart', () => {
+  it('does not add an unobserved gap when target predictions are more than 300ms apart', () => {
     const timer = createMovementTimer('Standing March')
 
     timer.observe({ className: 'Standing March', probability: 0.9 }, 0)
@@ -60,6 +60,6 @@ describe('movement timer', () => {
       timer.observe({ className: 'Standing March', probability: 0.9 }, timestamp)
     }
     expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_000)).toMatchObject({ activeDurationMs: 1_000, phase: 'tracking' })
-    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_301)).toMatchObject({ activeDurationMs: 0, phase: 'tracking' })
+    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 1_301)).toMatchObject({ activeDurationMs: 1_000, phase: 'tracking' })
   })
 })

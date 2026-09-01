@@ -35,8 +35,6 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
       if (!isRecognisedMovement) {
         if (lastRecognisedAt !== null && timestamp - lastRecognisedAt > recognitionGapToleranceMs) {
           phase = 'paused'
-          activeDurationMs = 0
-          lastRecognisedAt = null
         }
         previousPredictionWasRecognised = false
         return getResult()
@@ -51,11 +49,9 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
 
       if (lastRecognisedAt !== null) {
         const recognisedIntervalMs = timestamp - lastRecognisedAt
-        // A completed hold must be continuous, while still tolerating very short recognition fluctuations.
+        // Count only adjacent, timely correct predictions without discarding progress from earlier intervals.
         if (previousPredictionWasRecognised && recognisedIntervalMs <= recognitionGapToleranceMs) {
           activeDurationMs += recognisedIntervalMs
-        } else if (recognisedIntervalMs > recognitionGapToleranceMs) {
-          activeDurationMs = 0
         }
         lastRecognisedAt = timestamp
       }

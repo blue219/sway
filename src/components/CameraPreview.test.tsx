@@ -128,13 +128,25 @@ describe('CameraPreview', () => {
         .mockResolvedValueOnce([{ className: 'Neutral', probability: 0.9 }])
         .mockResolvedValue([{ className: 'Standing March', probability: 0.9 }]),
     })
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      clearRect: vi.fn(),
+      drawImage: vi.fn(),
+      restore: vi.fn(),
+      save: vi.fn(),
+      scale: vi.fn(),
+      translate: vi.fn(),
+    } as unknown as ReturnType<HTMLCanvasElement['getContext']>)
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
     vi.stubGlobal('requestAnimationFrame', requestAnimationFrame)
 
     const { recognitionState } = renderPreview(true, 'Standing March')
     const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
     await waitFor(() => expect(video.srcObject).toBe(stream))
-    Object.defineProperty(video, 'readyState', { configurable: true, value: HTMLMediaElement.HAVE_CURRENT_DATA })
+    Object.defineProperties(video, {
+      readyState: { configurable: true, value: HTMLMediaElement.HAVE_CURRENT_DATA },
+      videoHeight: { configurable: true, value: 480 },
+      videoWidth: { configurable: true, value: 640 },
+    })
     fireEvent.playing(video)
 
     await waitFor(() => expect(frameCallback).toBeDefined())
@@ -144,6 +156,59 @@ describe('CameraPreview', () => {
     frameCallback?.(16)
 
     await waitFor(() => expect(recognitionState).toHaveBeenLastCalledWith(true))
+  })
+
+  it('classifies a mirrored square crop that matches the model training input', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    let frameCallback: FrameRequestCallback | undefined
+    const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback
+      return 12
+    })
+    const estimatePose = vi.fn().mockResolvedValue({ posenetOutput: {} })
+    const context = {
+      clearRect: vi.fn(),
+      drawImage: vi.fn(),
+      restore: vi.fn(),
+      save: vi.fn(),
+      scale: vi.fn(),
+      translate: vi.fn(),
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as unknown as ReturnType<HTMLCanvasElement['getContext']>)
+    mockLoad.mockResolvedValue({
+      dispose: vi.fn(),
+      estimatePose,
+      getClassLabels: () => ['Neutral', 'Standing March'],
+      predict: vi.fn().mockResolvedValue([
+        { className: 'Neutral', probability: 0.99 },
+        { className: 'Standing March', probability: 0.01 },
+      ]),
+    })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrame)
+
+    const { activeDuration } = renderPreview(true, 'Standing March')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    Object.defineProperties(video, {
+      readyState: { configurable: true, value: HTMLMediaElement.HAVE_CURRENT_DATA },
+      videoHeight: { configurable: true, value: 480 },
+      videoWidth: { configurable: true, value: 640 },
+    })
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(frameCallback).toBeDefined())
+    frameCallback?.(0)
+
+    await waitFor(() => expect(estimatePose).toHaveBeenCalledOnce())
+    const inferenceFrame = estimatePose.mock.calls[0][0]
+    expect(inferenceFrame).toBeInstanceOf(HTMLCanvasElement)
+    expect(inferenceFrame).toMatchObject({ height: 257, width: 257 })
+    expect(context.translate).toHaveBeenCalledWith(257, 0)
+    expect(context.scale).toHaveBeenCalledWith(-1, 1)
+    expect(context.drawImage).toHaveBeenCalledWith(video, 80, 0, 480, 480, 0, 0, 257, 257)
+    expect(activeDuration).toHaveBeenLastCalledWith(0)
   })
 
   it('accepts a two-class model for its matching movement', async () => {
