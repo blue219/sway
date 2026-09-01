@@ -11,7 +11,7 @@ pnpm install
 pnpm dev
 ```
 
-Open the local URL shown by Vite. The prototype does not require a backend, camera, account, or environment variables.
+Open the local URL shown by Vite. The prototype does not require a backend, account, or environment variables. A camera is optional: grant browser permission to show its live preview on the movement page.
 
 ## Commands
 
@@ -25,7 +25,7 @@ pnpm build
 
 - The round opens on one of five preloaded movement videos. Select **Start** to begin playback from the start; its five-second hold starts when playback begins.
 - The movement demonstrator loops the selected responsive native video player asset.
-- The movement page uses a dedicated two-card layout: the demonstration is on the left, while the visual-only camera preview, readiness message, and Start button are on the right. It does not request camera permissions or perform movement detection.
+- The movement page uses a dedicated two-card layout: the demonstration is on the left, while a live browser camera preview, readiness message, and Start button are on the right. The readiness message becomes **Camera ready** only after a live video track has delivered a frame, and it names the browser-provided video input. It returns to a non-ready state if the stream is interrupted. The preview requests video-only permission, does not record or transmit footage, and stops its camera track when the movement page unmounts. It does not perform movement detection.
 - The countdown and action counter display in the upper-left and upper-right corners of the movement video, respectively. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift in a random, non-repeating order.
 - After all five movements, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - On the quiz, use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
@@ -35,7 +35,7 @@ pnpm build
 ## Prototype boundaries
 
 - Scores and tree state are held only for the current round and reset after finishing or refreshing.
-- There is no pose detection, camera input, medical guidance, account system, analytics, or facilitator dashboard.
+- There is no pose detection, camera recording, medical guidance, account system, analytics, or facilitator dashboard.
 - The 15-question demonstration bank includes six illustrated and nine text-only questions about te reo Māori, community, welcome customs, food, art and taonga. Any future te reo Māori or community-specific content must be reviewed by fluent speakers and community partners before use.
 
 ## Third-party licence

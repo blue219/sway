@@ -1,5 +1,6 @@
 import { Button } from 'animal-island-ui'
 import type { Movement } from '../game'
+import { CameraPreview } from './CameraPreview'
 import { MovementVideo } from './MovementVideo'
 
 type MovementScreenProps = {
@@ -56,14 +57,7 @@ export function MovementScreen({
           </Button>
         </div>
         <div className="camera-preview-panel">
-          <div className="camera-preview-area">
-            <img alt="A bright living room prepared for movement detection" src="/assets/camera-preview-living-room.png" />
-            <div aria-hidden="true" className="camera-guide" />
-            <div className="camera-ready-status">
-              <span aria-hidden="true" className="camera-ready-mark">✓</span>
-              <span>Ready to detect movement</span>
-            </div>
-          </div>
+          <CameraPreview />
         </div>
       </section>
     </main>

@@ -1,9 +1,12 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
 const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
 const movementVideoSources = ['/assets/side-arm-raise.mp4', '/assets/standing-march.mp4', '/assets/shallow-squat.mp4', '/assets/standing-side-bend.mp4', '/assets/side-leg-lift.mp4']
+const cameraTrackStop = vi.fn()
+const cameraTrack = { addEventListener: vi.fn(), enabled: true, getSettings: vi.fn(), label: 'Test camera', muted: false, readyState: 'live', stop: cameraTrackStop }
+const cameraStream = { getTracks: () => [cameraTrack], getVideoTracks: () => [cameraTrack] } as unknown as MediaStream
 
 function completeMovementSequence() {
   for (let movement = 0; movement < 5; movement += 1) {
@@ -14,6 +17,7 @@ function completeMovementSequence() {
 
 afterEach(() => {
   cleanup()
+  cameraTrackStop.mockClear()
   vi.restoreAllMocks()
   vi.useRealTimers()
 })
@@ -38,7 +42,7 @@ describe('Whakakori Together round', () => {
     expect(movementVideoSources).toContain(movementVideo.getAttribute('src'))
     expect(movementVideo).not.toHaveAttribute('autoplay')
     expect(movementVideo).toHaveAttribute('preload', 'auto')
-    expect(screen.getByRole('img', { name: 'A bright living room prepared for movement detection' })).toHaveAttribute('src', '/assets/camera-preview-living-room.png')
+    expect(screen.getByLabelText('Live camera preview')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
@@ -57,6 +61,23 @@ describe('Whakakori Together round', () => {
     }
 
     expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+  })
+
+  it('shows the active camera name only after the live preview starts playing, then stops it when the movement page closes', async () => {
+    const getUserMedia = vi.fn().mockResolvedValue(cameraStream)
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+    const { unmount } = render(<App />)
+
+    const cameraPreview = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(cameraPreview.srcObject).toBe(cameraStream))
+    expect(getUserMedia).toHaveBeenCalledWith({ audio: false, video: { facingMode: 'user' } })
+    expect(screen.getByText('Starting camera preview…')).toBeInTheDocument()
+
+    fireEvent.playing(cameraPreview)
+    expect(screen.getByText('Camera ready: Test camera')).toBeInTheDocument()
+
+    unmount()
+    expect(cameraTrackStop).toHaveBeenCalledOnce()
   })
 
   it('uses every movement once before opening the quiz', () => {
