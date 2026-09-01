@@ -20,7 +20,6 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
   let activeDurationMs = 0
   let lastRecognisedAt: number | null = null
   let previousPredictionWasRecognised = false
-  let hasObservedNeutralStance = false
 
   function getResult(): MovementTimerResult {
     return { completed: phase === 'complete', phase, activeDurationMs }
@@ -32,16 +31,12 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
         return getResult()
       }
 
-      const isNeutralStance = prediction.className === 'Neutral' && prediction.probability >= confidenceThreshold
-      if (!hasObservedNeutralStance) {
-        hasObservedNeutralStance = isNeutralStance
-        return getResult()
-      }
-
       const isRecognisedMovement = prediction.className === targetClassName && prediction.probability >= confidenceThreshold
       if (!isRecognisedMovement) {
         if (lastRecognisedAt !== null && timestamp - lastRecognisedAt > recognitionGapToleranceMs) {
           phase = 'paused'
+          activeDurationMs = 0
+          lastRecognisedAt = null
         }
         previousPredictionWasRecognised = false
         return getResult()
@@ -56,9 +51,11 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
 
       if (lastRecognisedAt !== null) {
         const recognisedIntervalMs = timestamp - lastRecognisedAt
-        // Count only adjacent, timely correct predictions; a wrong or delayed frame starts a new hold interval.
+        // A completed hold must be continuous, while still tolerating very short recognition fluctuations.
         if (previousPredictionWasRecognised && recognisedIntervalMs <= recognitionGapToleranceMs) {
           activeDurationMs += recognisedIntervalMs
+        } else if (recognisedIntervalMs > recognitionGapToleranceMs) {
+          activeDurationMs = 0
         }
         lastRecognisedAt = timestamp
       }
