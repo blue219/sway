@@ -1,0 +1,21 @@
+{
+    "tfjsVersion": "1.7.4",
+    "tmVersion": "0.8.6",
+    "packageVersion": "0.8.6",
+    "packageName": "@teachablemachine/pose",
+    "timeStamp": "2026-09-01T08:30:03.335Z",
+    "userMetadata": {},
+    "modelName": "my-pose-model",
+    "labels": [
+        "Neutral",
+        "Shallow Squat"
+    ],
+    "modelSettings": {
+        "posenet": {
+            "architecture": "MobileNetV1",
+            "outputStride": 16,
+            "inputResolution": 257,
+            "multiplier": 0.75
+        }
+    }
+}

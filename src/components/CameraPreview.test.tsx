@@ -63,7 +63,7 @@ describe('CameraPreview', () => {
     vi.stubGlobal('requestAnimationFrame', requestAnimationFrame)
     vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame)
 
-    const { recognitionStatus, unmount } = renderPreview(true)
+    const { recognitionStatus, unmount } = renderPreview(true, 'Standing March')
     const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
     await waitFor(() => expect(video.srcObject).toBe(stream))
     Object.defineProperty(video, 'requestVideoFrameCallback', { configurable: true, value: undefined })
@@ -72,7 +72,7 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/pose/model.json', '/models/pose/metadata.json'))
     await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
     await waitFor(() => expect(requestAnimationFrame).toHaveBeenCalledOnce())
-    expect(screen.getByText('Start Side Arm Raise. 0.0/5.0 seconds recognised.')).toBeInTheDocument()
+    expect(screen.getByText('Start Standing March. 0.0/5.0 seconds recognised.')).toBeInTheDocument()
 
     unmount()
     expect(track.stop).toHaveBeenCalledOnce()
@@ -123,6 +123,66 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(video.srcObject).toBe(stream))
     fireEvent.playing(video)
 
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
+  })
+
+  it('loads the dedicated Shallow Squat model', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Neutral', 'Shallow Squat'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Shallow Squat')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/shallow-squat/model.json', '/models/shallow-squat/metadata.json'))
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
+  })
+
+  it('loads the dedicated Side Leg Lift model', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Neutral', 'Side Leg Lift'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Side Leg Lift')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/side-leg-lift/model.json', '/models/side-leg-lift/metadata.json'))
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
+  })
+
+  it('loads the dedicated Standing Side Bend model', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Neutral', 'Standing Side Bend'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Standing Side Bend')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/standing-side-bend/model.json', '/models/standing-side-bend/metadata.json'))
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
+  })
+
+  it('loads the dedicated Side Arm Raise model', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Neutral', 'Side Arm Raise'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Side Arm Raise')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/side-arm-raise/model.json', '/models/side-arm-raise/metadata.json'))
     await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
   })
 })

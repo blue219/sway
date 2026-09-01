@@ -46,6 +46,14 @@ This non-commercial prototype uses [animal-island-ui](https://github.com/guokaig
 
 Train one six-class **Pose** model in Teachable Machine and export it as TensorFlow.js. Copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into `public/models/pose/`.
 
+The app also supports a dedicated two-class model for an individual movement. The included models are configured as follows:
+
+- `public/models/pose/`: `Neutral` and `Standing March`
+- `public/models/side-arm-raise/`: `Neutral` and `Side Arm Raise`
+- `public/models/shallow-squat/`: `Neutral` and `Shallow Squat`
+- `public/models/side-leg-lift/`: `Neutral` and `Side Leg Lift`
+- `public/models/standing-side-bend/`: `Neutral` and `Standing Side Bend`
+
 The model labels must match these values exactly:
 
 - `Neutral`
@@ -57,4 +65,4 @@ The model labels must match these values exactly:
 
 The app loads the model only from these local files. It uses the matching Teachable Machine browser runtime from `public/vendor/` rather than bundling this legacy TensorFlow.js version through Vite. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
 
-A two-class model containing `Neutral` and one movement label is also supported for that movement only. The included model is trained for `Standing March`; all other movements use the existing unavailable/timeout fallback until a six-class model replaces it.
+A two-class model containing `Neutral` and one movement label is supported only for that movement. The included models cover all five movements. A six-class model can replace them when available.

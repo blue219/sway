@@ -2,8 +2,29 @@ import type { CustomPoseNet } from '@teachablemachine/pose'
 import { useEffect, useRef, useState } from 'react'
 import { createMovementTimer, requiredMovementDurationMs, type MovementTimerPhase } from '../poseRecognition'
 
-const modelUrl = '/models/pose/model.json'
-const metadataUrl = '/models/pose/metadata.json'
+const defaultModelUrls = {
+  model: '/models/pose/model.json',
+  metadata: '/models/pose/metadata.json',
+}
+
+const modelUrlsByMovement: Record<string, typeof defaultModelUrls> = {
+  'Side Arm Raise': {
+    model: '/models/side-arm-raise/model.json',
+    metadata: '/models/side-arm-raise/metadata.json',
+  },
+  'Shallow Squat': {
+    model: '/models/shallow-squat/model.json',
+    metadata: '/models/shallow-squat/metadata.json',
+  },
+  'Side Leg Lift': {
+    model: '/models/side-leg-lift/model.json',
+    metadata: '/models/side-leg-lift/metadata.json',
+  },
+  'Standing Side Bend': {
+    model: '/models/standing-side-bend/model.json',
+    metadata: '/models/standing-side-bend/metadata.json',
+  },
+}
 const requiredLabels = ['Neutral', 'Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
 
 type CameraStatus = 'loadingCamera' | 'loadingModel' | 'ready' | 'unavailable' | 'denied' | 'invalidModel' | 'modelError' | 'recognitionError'
@@ -26,6 +47,10 @@ function hasRequiredLabels(labels: string[], movementLabel: string) {
   const isMovementModel = labels.length === 2 && labels.includes('Neutral') && labels.includes(movementLabel)
 
   return isCompleteModel || isMovementModel
+}
+
+function getModelUrls(movementLabel: string) {
+  return modelUrlsByMovement[movementLabel] ?? defaultModelUrls
 }
 
 function getUnavailableMessage(status: CameraStatus) {
@@ -191,6 +216,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
     }
 
     let isCurrent = true
+    const modelUrls = getModelUrls(movementLabel)
     setStatus('loadingModel')
     setModelReady(false)
 
@@ -199,7 +225,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
         if (!window.tmPose) {
           throw new Error('The local pose runtime is unavailable.')
         }
-        return window.tmPose.load(modelUrl, metadataUrl)
+        return window.tmPose.load(modelUrls.model, modelUrls.metadata)
       })
       .then((model) => {
         if (!isCurrent) {
