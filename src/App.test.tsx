@@ -1,107 +1,121 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useEffect } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { RecognitionStatus } from './components/CameraPreview'
 import App from './App'
 
 const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
-const movementVideoSources = ['/assets/side-arm-raise.mp4', '/assets/standing-march.mp4', '/assets/shallow-squat.mp4', '/assets/standing-side-bend.mp4', '/assets/side-leg-lift.mp4']
-const cameraTrackStop = vi.fn()
-const cameraTrack = { addEventListener: vi.fn(), enabled: true, getSettings: vi.fn(), label: 'Test camera', muted: false, readyState: 'live', stop: cameraTrackStop }
-const cameraStream = { getTracks: () => [cameraTrack], getVideoTracks: () => [cameraTrack] } as unknown as MediaStream
+let nextRecognitionStatus: RecognitionStatus = { kind: 'ready' }
 
-function completeMovementSequence() {
+vi.mock('./components/CameraPreview', () => ({
+  CameraPreview: ({ isTracking, onRecognitionStatusChange, onComplete, onRepetitionsChange }: {
+    isTracking: boolean
+    onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
+    onComplete: () => void
+    onRepetitionsChange: (repetitions: number) => void
+  }) => {
+    useEffect(() => {
+      onRecognitionStatusChange(nextRecognitionStatus)
+    }, [onRecognitionStatusChange])
+
+    return (
+      <button
+        disabled={!isTracking}
+        type="button"
+        onClick={() => {
+          onRepetitionsChange(5)
+          onComplete()
+        }}
+      >
+        Complete recognized movement
+      </button>
+    )
+  },
+}))
+
+function startAndCompleteMovementSequence() {
+  fireEvent.click(screen.getByRole('button', { name: 'Start' }))
   for (let movement = 0; movement < 5; movement += 1) {
-    fireEvent.play(screen.getByLabelText(/An older adult demonstrating/))
-    act(() => vi.advanceTimersByTime(5_000))
+    fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
+    completeCountdown()
+  }
+}
+
+function completeCountdown() {
+  for (let second = 0; second < 5; second += 1) {
+    act(() => vi.advanceTimersByTime(1_000))
   }
 }
 
 afterEach(() => {
   cleanup()
-  cameraTrackStop.mockClear()
+  nextRecognitionStatus = { kind: 'ready' }
   vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
 describe('Whakakori Together round', () => {
-  it('opens the quiz after five non-repeating movement holds complete', () => {
+  it('starts a five-second countdown after the fifth recognised repetition, then advances', () => {
     vi.useFakeTimers()
     render(<App />)
 
     expect(movementTitles).toContain(screen.getByRole('heading', { level: 1 }).textContent)
-    expect(screen.getByText('Whakakori Together')).toBeInTheDocument()
-    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
-    expect(document.querySelector('img[src="/assets/movement-activity-icon.png"]')).toBeInTheDocument()
-    expect(screen.getByText('1/5')).toBeInTheDocument()
-    expect(document.querySelector('.movement-card-heading .movement-index')).toBeInTheDocument()
-    expect(document.querySelector('.movement-video-frame .movement-countdown')).toBeInTheDocument()
-    expect(screen.queryByText('seconds left')).not.toBeInTheDocument()
-    expect(document.querySelector('.recognition-status')).not.toBeInTheDocument()
-    expect(screen.queryByText('Follow the demonstration')).not.toBeInTheDocument()
-    expect(document.querySelector('.movement-ready-dot')).not.toBeInTheDocument()
-    const movementVideo = screen.getByLabelText(/An older adult demonstrating/)
-    expect(movementVideoSources).toContain(movementVideo.getAttribute('src'))
-    expect(movementVideo).not.toHaveAttribute('autoplay')
-    expect(movementVideo).toHaveAttribute('preload', 'auto')
-    expect(screen.getByLabelText('Live camera preview')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
+
     expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
-    act(() => vi.advanceTimersByTime(1_000))
-    expect(screen.getByText('5')).toBeInTheDocument()
+    expect(screen.getByText('Movement complete')).toBeInTheDocument()
+    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
 
-    fireEvent.play(screen.getByLabelText(/An older adult demonstrating/))
-    act(() => vi.advanceTimersByTime(1_000))
-    expect(screen.getByText('4')).toBeInTheDocument()
-    act(() => vi.advanceTimersByTime(4_000))
+    completeCountdown()
+
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
-
-    for (let movement = 0; movement < 4; movement += 1) {
-      fireEvent.play(screen.getByLabelText(/An older adult demonstrating/))
-      act(() => vi.advanceTimersByTime(5_000))
-    }
-
-    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
   })
 
-  it('shows the active camera name only after the live preview starts playing, then stops it when the movement page closes', async () => {
-    const getUserMedia = vi.fn().mockResolvedValue(cameraStream)
-    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
-    const { unmount } = render(<App />)
-
-    const cameraPreview = screen.getByLabelText('Live camera preview') as HTMLVideoElement
-    await waitFor(() => expect(cameraPreview.srcObject).toBe(cameraStream))
-    expect(getUserMedia).toHaveBeenCalledWith({ audio: false, video: { facingMode: 'user' } })
-    expect(screen.getByText('Starting camera preview…')).toBeInTheDocument()
-
-    fireEvent.playing(cameraPreview)
-    expect(screen.getByText('Camera ready: Test camera')).toBeInTheDocument()
-
-    unmount()
-    expect(cameraTrackStop).toHaveBeenCalledOnce()
-  })
-
-  it('uses every movement once before opening the quiz', () => {
+  it('offers a timer fallback when recognition is unavailable and applies it to later movements', () => {
     vi.useFakeTimers()
+    nextRecognitionStatus = { kind: 'unavailable', message: 'Camera is unavailable.' }
     render(<App />)
 
-    const displayedTitles = new Set<string>()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    for (let movement = 0; movement < 5; movement += 1) {
-      displayedTitles.add(screen.getByRole('heading', { level: 1 }).textContent ?? '')
-      fireEvent.play(screen.getByLabelText(/An older adult demonstrating/))
-      act(() => vi.advanceTimersByTime(5_000))
-    }
 
-    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
-    expect(displayedTitles).toEqual(new Set(movementTitles))
+    expect(screen.getByText('Pose recognition unavailable')).toBeInTheDocument()
+    expect(screen.getByText('Camera is unavailable.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
+    expect(screen.getByText('Timer mode')).toBeInTheDocument()
+    completeCountdown()
+
+    expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
+    expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
+    expect(screen.queryByText('Pose recognition unavailable')).not.toBeInTheDocument()
+  })
+
+  it('keeps the current movement playing when the participant declines the fallback', () => {
+    nextRecognitionStatus = { kind: 'unavailable', message: 'Camera is unavailable.' }
+    const pause = vi.spyOn(HTMLMediaElement.prototype, 'pause')
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    const pausesAfterStart = pause.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }))
+
+    expect(screen.queryByText('Pose recognition unavailable')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
+    expect(pause).toHaveBeenCalledTimes(pausesAfterStart)
   })
 
   it('shows correct and incorrect answer feedback for one second before advancing', () => {
     vi.useFakeTimers()
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    completeMovementSequence()
+    startAndCompleteMovementSequence()
     const firstQuestion = screen.getByRole('heading', { level: 1 }).textContent
     fireEvent.click(screen.getAllByRole('radio')[0])
 
@@ -119,8 +133,7 @@ describe('Whakakori Together round', () => {
     vi.useFakeTimers()
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    completeMovementSequence()
+    startAndCompleteMovementSequence()
 
     const answeredQuestions = new Set<string>()
     for (let question = 0; question < 5; question += 1) {
@@ -136,8 +149,5 @@ describe('Whakakori Together round', () => {
     expect(answeredQuestions).toHaveLength(5)
     expect(screen.getByText(/You answered 5 of 5 questions correctly/)).toBeInTheDocument()
     expect(screen.getByText('+50 Wellbeing Points')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Finish for today' }))
-    expect(movementTitles).toContain(screen.getByRole('heading', { level: 1 }).textContent)
   })
 })

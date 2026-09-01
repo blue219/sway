@@ -1,30 +1,47 @@
 import { Button } from 'animal-island-ui'
+import type { RecognitionStatus } from './CameraPreview'
 import type { Movement } from '../game'
 import { CameraPreview } from './CameraPreview'
 import { MovementVideo } from './MovementVideo'
 
 type MovementScreenProps = {
   currentMovement: number
+  fallbackTimerEnabled: boolean
+  isCountingDown: boolean
+  isTracking: boolean
+  isWaitingForRecognition: boolean
   movement: Movement
-  isHolding: boolean
+  repetitions: number
   secondsRemaining: number
   totalMovements: number
   playRequest: number
-  onPlaybackStart: () => void
+  onRecognitionComplete: () => void
+  onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
+  onRepetitionsChange: (repetitions: number) => void
   onStart: () => void
 }
 
 export function MovementScreen({
   currentMovement,
+  fallbackTimerEnabled,
+  isCountingDown,
+  isTracking,
+  isWaitingForRecognition,
   movement,
-  isHolding,
+  repetitions,
   secondsRemaining,
   totalMovements,
   playRequest,
-  onPlaybackStart,
+  onRecognitionComplete,
+  onRecognitionStatusChange,
+  onRepetitionsChange,
   onStart,
 }: MovementScreenProps) {
-  const seconds = isHolding ? secondsRemaining : 5
+  const statusLabel = isCountingDown
+    ? fallbackTimerEnabled ? 'Timer mode' : 'Movement complete'
+    : isTracking ? 'Recognizing movement'
+    : isWaitingForRecognition ? 'Checking pose recognition'
+    : 'Movement ready'
 
   return (
     <main className="movement-screen" aria-labelledby="movement-title">
@@ -40,24 +57,33 @@ export function MovementScreen({
         </div>
         <div className="movement-video-panel">
           <div className="movement-video-frame">
-            <div aria-label={`${seconds} seconds remaining`} aria-live="polite" className="movement-countdown">
-              <strong>{seconds}</strong>
-            </div>
-            <MovementVideo key={movement.videoSrc} label={`An older adult demonstrating ${movement.title.toLowerCase()}`} playRequest={playRequest} src={movement.videoSrc} onPlaybackStart={onPlaybackStart} />
+            {isCountingDown ? (
+              <div aria-label={`${secondsRemaining} seconds remaining`} aria-live="polite" className="movement-countdown">
+                <strong>{secondsRemaining}</strong>
+              </div>
+            ) : null}
+            <MovementVideo key={movement.videoSrc} label={`An older adult demonstrating ${movement.title.toLowerCase()}`} playRequest={playRequest} src={movement.videoSrc} />
           </div>
         </div>
       </section>
       <section className="movement-camera-card" aria-label="Movement camera preview">
         <div className="movement-camera-heading">
           <div>
-            <h2>Movement ready</h2>
+            <h2>{statusLabel}</h2>
+            <p className="movement-repetition-count" aria-live="polite">{repetitions}/5 completed</p>
           </div>
-          <Button className="start-movement-button" disabled={isHolding} htmlType="button" size="large" type="primary" onClick={onStart}>
+          <Button className="start-movement-button" disabled={isTracking || isWaitingForRecognition || isCountingDown} htmlType="button" size="large" type="primary" onClick={onStart}>
             Start
           </Button>
         </div>
         <div className="camera-preview-panel">
-          <CameraPreview />
+          <CameraPreview
+            isTracking={isTracking}
+            movementLabel={movement.title}
+            onComplete={onRecognitionComplete}
+            onRecognitionStatusChange={onRecognitionStatusChange}
+            onRepetitionsChange={onRepetitionsChange}
+          />
         </div>
       </section>
     </main>

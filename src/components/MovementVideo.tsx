@@ -4,10 +4,9 @@ type MovementVideoProps = {
   label: string
   playRequest: number
   src: string
-  onPlaybackStart: () => void
 }
 
-export function MovementVideo({ label, playRequest, src, onPlaybackStart }: MovementVideoProps) {
+export function MovementVideo({ label, playRequest, src }: MovementVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -24,5 +23,5 @@ export function MovementVideo({ label, playRequest, src, onPlaybackStart }: Move
     }
   }, [playRequest])
 
-  return <video ref={videoRef} aria-label={label} loop muted playsInline preload="auto" src={src} onPlay={onPlaybackStart} />
+  return <video ref={videoRef} aria-label={label} loop muted playsInline preload="auto" src={src} />
 }
