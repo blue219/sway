@@ -117,7 +117,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
         setStatus('unavailable')
       }
     }
-    if ('requestVideoFrameCallback' in video) {
+    if (typeof video.requestVideoFrameCallback === 'function') {
       video.requestVideoFrameCallback(confirmFrame)
       return
     }

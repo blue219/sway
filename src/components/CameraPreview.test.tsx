@@ -64,6 +64,7 @@ describe('CameraPreview', () => {
     const { recognitionStatus, unmount } = renderPreview(true)
     const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
     await waitFor(() => expect(video.srcObject).toBe(stream))
+    Object.defineProperty(video, 'requestVideoFrameCallback', { configurable: true, value: undefined })
     fireEvent.playing(video)
 
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/pose/model.json', '/models/pose/metadata.json'))
