@@ -19,6 +19,7 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
   let phase: MovementTimerPhase = 'waitingForMovement'
   let activeDurationMs = 0
   let lastRecognisedAt: number | null = null
+  let previousPredictionWasRecognised = false
 
   function getResult(): MovementTimerResult {
     return { completed: phase === 'complete', phase, activeDurationMs }
@@ -35,19 +36,26 @@ export function createMovementTimer(targetClassName: string, requiredDurationMs 
         if (lastRecognisedAt !== null && timestamp - lastRecognisedAt > recognitionGapToleranceMs) {
           phase = 'paused'
         }
+        previousPredictionWasRecognised = false
         return getResult()
       }
 
       if (phase === 'waitingForMovement' || phase === 'paused') {
         phase = 'tracking'
         lastRecognisedAt = timestamp
+        previousPredictionWasRecognised = true
         return getResult()
       }
 
       if (lastRecognisedAt !== null) {
-        activeDurationMs += timestamp - lastRecognisedAt
+        const recognisedIntervalMs = timestamp - lastRecognisedAt
+        // Count only adjacent, timely correct predictions; a wrong or delayed frame starts a new hold interval.
+        if (previousPredictionWasRecognised && recognisedIntervalMs <= recognitionGapToleranceMs) {
+          activeDurationMs += recognisedIntervalMs
+        }
         lastRecognisedAt = timestamp
       }
+      previousPredictionWasRecognised = true
       if (activeDurationMs >= requiredDurationMs) {
         activeDurationMs = requiredDurationMs
         phase = 'complete'
