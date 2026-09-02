@@ -19,6 +19,7 @@ type MovementScreenProps = {
   onRecognitionComplete: () => void
   onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
   onActiveDurationChange: (activeDurationMs: number) => void
+  onSkip: () => void
   onStart: () => void
 }
 
@@ -35,6 +36,7 @@ export function MovementScreen({
   onRecognitionComplete,
   onRecognitionStatusChange,
   onActiveDurationChange,
+  onSkip,
   onStart,
 }: MovementScreenProps) {
   const [isMovementRecognised, setIsMovementRecognised] = useState<boolean | null>(null)
@@ -57,6 +59,9 @@ export function MovementScreen({
             </span>
             <Button className="start-movement-button" disabled={isTracking || isWaitingForRecognition || isCountingDown} htmlType="button" size="large" type="primary" onClick={onStart}>
               Start
+            </Button>
+            <Button className="skip-movement-button" htmlType="button" size="large" type="default" onClick={onSkip}>
+              Skip
             </Button>
           </div>
         </div>

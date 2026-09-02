@@ -2,6 +2,7 @@ import { Card, Radio } from 'animal-island-ui'
 import type { QuizQuestion } from '../game'
 
 type QuizScreenProps = {
+  answerOrder: string[]
   quiz: QuizQuestion
   currentQuestion: number
   totalQuestions: number
@@ -10,7 +11,7 @@ type QuizScreenProps = {
   onAnswer: (answer: string) => void
 }
 
-export function QuizScreen({ quiz, currentQuestion, totalQuestions, selectedAnswer, isShowingAnswer, onAnswer }: QuizScreenProps) {
+export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions, selectedAnswer, isShowingAnswer, onAnswer }: QuizScreenProps) {
   return (
     <main className="screen quiz-screen">
       <Card className={`quiz-panel${quiz.image ? '' : ' quiz-panel-text-only'}`} color="app-teal" pattern="app-teal" aria-labelledby="quiz-title">
@@ -28,7 +29,7 @@ export function QuizScreen({ quiz, currentQuestion, totalQuestions, selectedAnsw
             direction="vertical"
             key={currentQuestion}
             onChange={(answer) => onAnswer(String(answer))}
-            options={quiz.options.map((option, index) => ({
+            options={answerOrder.map((option, index) => ({
               label: (
                 <span className={`quiz-option-feedback${isShowingAnswer && option === quiz.correctAnswer ? ' quiz-option-feedback-correct' : ''}${isShowingAnswer && option === selectedAnswer && option !== quiz.correctAnswer ? ' quiz-option-feedback-incorrect' : ''}`}>
                   <span className="quiz-option-letter">{String.fromCharCode(65 + index)}.</span> {option}

@@ -71,6 +71,17 @@ export function createRandomQuizOrder(count: number, random = Math.random): numb
   return createRandomMovementOrder(count, random)
 }
 
+export function createRandomAnswerOrder(options: string[], random = Math.random): string[] {
+  const order = [...options]
+
+  for (let index = order.length - 1; index > 0; index -= 1) {
+    const nextIndex = Math.floor(random() * (index + 1))
+    ;[order[index], order[nextIndex]] = [order[nextIndex], order[index]]
+  }
+
+  return order
+}
+
 const treeStages: TreeStage[] = [
   { name: 'Seed', minimumPoints: 0 },
   { name: 'Sprout', minimumPoints: 1 },

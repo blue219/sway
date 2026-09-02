@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useEffect } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RecognitionStatus } from './components/CameraPreview'
+import { quizQuestions } from './game'
 import App from './App'
 
 const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
@@ -85,6 +86,19 @@ describe('Whakakori Together round', () => {
     expect(recognitionIndicator.closest('.movement-progress')).toHaveTextContent('✓Hold0.0/5 S')
   })
 
+  it('skips the current movement and opens the quiz after the fifth skip', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
+
+    for (let movement = 0; movement < 4; movement += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    }
+
+    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+  })
+
   it('offers a timer fallback when recognition is unavailable and applies it to later movements', () => {
     vi.useFakeTimers()
     nextRecognitionStatus = { kind: 'unavailable', message: 'Camera is unavailable.' }
@@ -139,7 +153,7 @@ describe('Whakakori Together round', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(firstQuestion)
   })
 
-  it('accepts keyboard answers for five non-repeating questions and totals the score', () => {
+  it('accepts correct answers for five non-repeating questions and totals the score', () => {
     vi.useFakeTimers()
     render(<App />)
 
@@ -147,10 +161,13 @@ describe('Whakakori Together round', () => {
 
     const answeredQuestions = new Set<string>()
     for (let question = 0; question < 5; question += 1) {
-      answeredQuestions.add(screen.getByRole('heading', { level: 1 }).textContent ?? '')
-      const firstOption = screen.getAllByRole('radio')[0]
-      firstOption.focus()
-      fireEvent.keyDown(firstOption, { key: 'ArrowDown' })
+      const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
+      answeredQuestions.add(questionText)
+      const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
+      const correctOption = screen.getByText(correctAnswer ?? '', { exact: false }).closest('label')?.querySelector('input')
+
+      expect(correctOption).not.toBeNull()
+      fireEvent.click(correctOption!)
       expect(document.querySelector('.quiz-option-feedback-correct')).toBeInTheDocument()
       act(() => vi.advanceTimersByTime(1_000))
     }

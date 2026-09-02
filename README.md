@@ -28,7 +28,8 @@ pnpm build
 - The movement page uses a dedicated two-card layout: the demonstration is on the left, while a live browser camera preview, a prominent cumulative `Hold 0.0/5 S` prompt, and Start button are on the right. While recognition is active, a green check or red cross appears beside Hold to show whether the current movement is recognised. The preview requests video-only permission, does not record or transmit footage, and stops its camera track when the movement page unmounts.
 - Start is available while the camera and pose model initialise. Recognition starts as soon as the selected movement is predicted with at least 70% confidence; an initial `Neutral` prediction is not required. `Neutral`, low-confidence, and other movement predictions do not add time. Gaps longer than 300 milliseconds pause the timer without clearing prior progress. After five seconds of recognised movement time, the next movement starts immediately. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift in a random, non-repeating order.
 - After all five movements, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
-- On the quiz, use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
+- On the quiz, answer choices are shuffled for every question. Use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
+- Select **Skip** beside **Start** to move directly to the next movement. Skipping the fifth movement opens the quiz.
 - Each correct answer earns 10 Wellbeing Points, for a maximum of 50 points per round.
 - The UI uses large controls, visible keyboard focus, high contrast, responsive layouts, and reduced motion preferences.
 

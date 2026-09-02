@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
+import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
 
 describe('round rewards', () => {
   it('awards 10 points for each correct quiz answer', () => {
@@ -33,6 +33,13 @@ describe('round rewards', () => {
     const questionOrder = createRandomQuizOrder(quizQuestions.length, () => 0)
 
     expect(new Set(questionOrder.slice(0, questionsPerRound))).toHaveLength(questionsPerRound)
+  })
+
+  it('shuffles answer choices without modifying the question bank', () => {
+    const options = ['A', 'B', 'C', 'D']
+
+    expect(createRandomAnswerOrder(options, () => 0)).toEqual(['B', 'C', 'D', 'A'])
+    expect(options).toEqual(['A', 'B', 'C', 'D'])
   })
 
   it('includes 15 Māori culture questions with six illustrations', () => {

@@ -5,7 +5,7 @@ import { type RecognitionStatus } from './components/CameraPreview'
 import { MovementScreen } from './components/MovementScreen'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
-import { createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
+import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
 
 type Screen = 'movement' | 'quiz' | 'result'
 type MovementPhase = 'idle' | 'waitingForRecognition' | 'recognizing' | 'countdown'
@@ -18,6 +18,7 @@ function App() {
   const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.length))
   const [quizOrder, setQuizOrder] = useState(() => createRandomQuizOrder(quizQuestions.length))
   const [quizQuestionIndex, setQuizQuestionIndex] = useState(0)
+  const [answerOrder, setAnswerOrder] = useState(() => createRandomAnswerOrder(quizQuestions[quizOrder[0]].options))
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isShowingAnswer, setIsShowingAnswer] = useState(false)
   const [correctAnswers, setCorrectAnswers] = useState(0)
@@ -43,7 +44,9 @@ function App() {
         return
       }
 
-      setQuizQuestionIndex((index) => index + 1)
+      const nextQuestionIndex = quizQuestionIndex + 1
+      setQuizQuestionIndex(nextQuestionIndex)
+      setAnswerOrder(createRandomAnswerOrder(quizQuestions[quizOrder[nextQuestionIndex]].options))
       setSelectedAnswer(null)
       setIsShowingAnswer(false)
     }, 1_000)
@@ -113,11 +116,14 @@ function App() {
   }, [fallbackTimerEnabled, movementPhase, recognitionStatus])
 
   function resetRound() {
+    const nextQuizOrder = createRandomQuizOrder(quizQuestions.length)
+
     movementIndexRef.current = 0
     setMovementIndex(0)
     setMovementOrder(createRandomMovementOrder(movements.length))
-    setQuizOrder(createRandomQuizOrder(quizQuestions.length))
+    setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
+    setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
     setSelectedAnswer(null)
     setIsShowingAnswer(false)
     setCorrectAnswers(0)
@@ -235,10 +241,11 @@ function App() {
             onRecognitionComplete={handleRecognitionComplete}
             onRecognitionStatusChange={handleRecognitionStatusChange}
             onActiveDurationChange={handleActiveDurationChange}
+            onSkip={advanceMovement}
             onStart={startMovement}
           />
         ) : null}
-        {screen === 'quiz' ? <QuizScreen currentQuestion={quizQuestionIndex + 1} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
+        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
         {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalQuestions={questionsPerRound} treeStage={treeStage} onFinish={finishRound} onPlayAgain={playAgain} /> : null}
         <Modal
           className="recognition-fallback-modal"
