@@ -42,8 +42,7 @@ h2 { margin-bottom: 10px; font-size: clamp(1.45rem, 2.3vw, 2.15rem); line-height
 .primary-action, .secondary-action { min-height: 58px; font-size: clamp(1.05rem, 1.6vw, 1.35rem); font-weight: 800; }
 .quiz-screen, .result-screen { display: grid; align-content: center; gap: clamp(22px, 4vw, 42px); }
 .result-screen { overflow-y: auto; }
-.welcome-copy { max-width: 720px; }
-.welcome-copy > p:last-child, .guidance, .comfortable-note, .result-message { font-size: clamp(1.15rem, 2vw, 1.55rem); line-height: 1.5; }
+.result-message { font-size: clamp(1.15rem, 2vw, 1.55rem); line-height: 1.5; }
 
 .movement-screen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(14px, 1.7vw, 26px); flex: 1; min-height: 0; padding: clamp(14px, 1.6vw, 24px); }
 .movement-action-card, .movement-camera-card { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; padding: clamp(12px, 1.4vw, 20px); border: 1px solid rgba(255, 255, 255, .9); border-radius: clamp(28px, 2.2vw, 38px); background: rgba(255, 255, 255, .94); box-shadow: 0 10px 24px rgba(76, 99, 92, .14); }

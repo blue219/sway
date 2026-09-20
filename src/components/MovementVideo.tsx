@@ -18,7 +18,7 @@ export function MovementVideo({ label, playRequest, src }: MovementVideoProps) {
     const playPromise = video.play()
     if (playPromise) {
       void playPromise.catch(() => {
-        // A failed attempt leaves Start available so the participant can retry.
+        // Playback can be blocked by the browser; avoid an unhandled rejection.
       })
     }
   }, [playRequest])

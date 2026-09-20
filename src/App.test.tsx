@@ -153,7 +153,7 @@ describe('Whakakori Together round', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(firstQuestion)
   })
 
-  it('accepts correct answers for five non-repeating questions and totals the score', () => {
+  it.each(['Play another round', 'Finish for today'])('totals the score and resets the round with %s', (resetAction) => {
     vi.useFakeTimers()
     render(<App />)
 
@@ -176,5 +176,11 @@ describe('Whakakori Together round', () => {
     expect(answeredQuestions).toHaveLength(5)
     expect(screen.getByText(/You answered 5 of 5 questions correctly/)).toBeInTheDocument()
     expect(screen.getByText('+50 Wellbeing Points')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: resetAction }))
+
+    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
+    expect(screen.getByLabelText('0 Wellbeing Points, Seed')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
   })
 })

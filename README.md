@@ -11,7 +11,7 @@ pnpm install
 pnpm dev
 ```
 
-Open the local URL shown by Vite. The prototype does not require a backend, account, or environment variables. Pose recognition requires a browser camera and a locally deployed Teachable Machine pose model.
+Open the local URL shown by Vite. The prototype does not require a backend, account, or environment variables. Pose recognition requires camera permission in a secure browser context (localhost or HTTPS). The five movement classifiers and browser runtimes are included; the PoseNet backbone weights may still be fetched from Google Cloud Storage by the runtime.
 
 ## Commands
 
@@ -21,12 +21,25 @@ pnpm lint
 pnpm build
 ```
 
+For a focused check, run `pnpm exec vitest run src/game.test.ts src/poseRecognition.test.ts`. `pnpm test:watch` runs tests interactively. The build writes a static site to `dist/`; deploy at the site root because asset and model URLs are absolute paths. ESLint checks project code and excludes the vendored, minified runtimes.
+
+## Repository structure
+
+- `src/App.tsx`: round state, screen transitions, quiz feedback, and timer fallback.
+- `src/game.ts`: movement and quiz content, randomisation, scoring, and tree stages.
+- `src/poseRecognition.ts`: confidence threshold and cumulative recognition timer.
+- `src/components/`: header, movement, camera, quiz, and result presentation.
+- `src/styles.css`: responsive styling layered over `animal-island-ui/style`.
+- `src/**/*.test.ts(x)` and `src/test/setup.ts`: Vitest and Testing Library regression coverage.
+- `public/assets/`, `public/models/`, `public/vendor/`: served media, movement classifiers, and legacy browser runtimes.
+- `Movement Game Prototype.docx`: original design reference; this README describes the implemented behaviour.
+
 ## Interaction and accessibility
 
 - The round opens on one of five preloaded movement videos. Select **Start** to begin playback and recognition from the start. A movement completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. The next movement begins immediately after completion.
 - The movement demonstrator loops the selected responsive native video player asset.
-- The movement page uses a dedicated two-card layout: the demonstration is on the left, while a live browser camera preview, a prominent cumulative `Hold 0.0/5 S` prompt, and Start button are on the right. While recognition is active, a green check or red cross appears beside Hold to show whether the current movement is recognised. The preview requests video-only permission, does not record or transmit footage, and stops its camera track when the movement page unmounts.
-- Start is available while the camera and pose model initialise. Recognition starts as soon as the selected movement is predicted with at least 70% confidence; an initial `Neutral` prediction is not required. `Neutral`, low-confidence, and other movement predictions do not add time. Gaps longer than 300 milliseconds pause the timer without clearing prior progress. After five seconds of recognised movement time, the next movement starts immediately. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift in a random, non-repeating order.
+- The movement page uses a two-card layout: the demonstration, movement counter, Start and Skip buttons are on the left; a live browser camera preview and cumulative `Hold 0.0/5 S` prompt are on the right. The cards stack on mobile. While recognition is active, a green check or red cross appears beside Hold. The preview requests video-only permission, processes footage in the browser, and stops its camera track when the movement page unmounts.
+- Start is available while the camera and pose model initialise. An initial `Neutral` prediction is not required. Only adjacent target predictions at or above 70% confidence and no more than 300 milliseconds apart add time; `Neutral`, low-confidence, and other movement predictions do not add time. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift.
 - After all five movements, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - On the quiz, answer choices are shuffled for every question. Use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
 - Select **Skip** beside **Start** to move directly to the next movement. Skipping the fifth movement opens the quiz.
@@ -35,7 +48,7 @@ pnpm build
 
 ## Prototype boundaries
 
-- Scores and tree state are held only for the current round and reset after finishing or refreshing.
+- Scores and tree state are held only for the current round. Points are revealed on the result screen. Both **Play another round** and **Finish for today** reset the round and return to the first movement; refreshing also starts a new round.
 - There is no camera recording, medical guidance, account system, analytics, or facilitator dashboard. Pose classification only identifies the trained movement category; it does not assess exercise quality, range of motion, or safety.
 - The 15-question demonstration bank includes six illustrated and nine text-only questions about te reo Māori, community, welcome customs, food, art and taonga. Any future te reo Māori or community-specific content must be reviewed by fluent speakers and community partners before use.
 
@@ -45,9 +58,7 @@ This non-commercial prototype uses [animal-island-ui](https://github.com/guokaig
 
 ## Pose model setup
 
-Train one six-class **Pose** model in Teachable Machine and export it as TensorFlow.js. Copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into `public/models/pose/`.
-
-The app also supports a dedicated two-class model for an individual movement. The included models are configured as follows:
+The included models are dedicated two-class **Pose** models exported from Teachable Machine as TensorFlow.js. No training or file copying is required to run the supplied prototype. `CameraPreview.tsx` selects these paths by movement title:
 
 - `public/models/pose/`: `Neutral` and `Standing March`
 - `public/models/side-arm-raise/`: `Neutral` and `Side Arm Raise`
@@ -64,7 +75,9 @@ The model labels must match these values exactly:
 - `Standing Side Bend`
 - `Side Leg Lift`
 
-The app loads the model only from these local files. It uses the matching Teachable Machine browser runtime from `public/vendor/` rather than bundling this legacy TensorFlow.js version through Vite. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
+To replace a classifier, copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into its movement directory. A shared six-class model is also supported: place its files in `public/models/pose/` and remove the dedicated entries in `modelUrlsByMovement` in `CameraPreview.tsx` so all movements use `defaultModelUrls`. Replacing only `public/models/pose/` changes Standing March, not the other four movements.
+
+The app loads the movement classifiers from these local files. `index.html` loads TensorFlow.js before the Teachable Machine browser runtime from `public/vendor/`; Vite does not bundle those legacy runtimes. The runtime can download PoseNet backbone weights from `storage.googleapis.com`, so fully offline recognition is not guaranteed. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
 
 ### Camera preprocessing invariant
 
@@ -74,4 +87,4 @@ Do not replace this canvas with the raw `<video>` element. The preview's CSS `tr
 
 Keep the `CameraPreview` regression test that verifies the model receives a mirrored, centred 257 × 257 canvas and that a high-confidence `Neutral` prediction leaves the active duration at zero.
 
-A two-class model containing `Neutral` and one movement label is supported only for that movement. The included models cover all five movements. A six-class model can replace them when available.
+A two-class model containing `Neutral` and one movement label is supported only for that movement. Keep movement titles and model labels aligned when editing the content.

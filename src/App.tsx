@@ -6,11 +6,12 @@ import { MovementScreen } from './components/MovementScreen'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
 import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
+import { requiredMovementDurationMs } from './poseRecognition'
 
 type Screen = 'movement' | 'quiz' | 'result'
 type MovementPhase = 'idle' | 'waitingForRecognition' | 'recognizing' | 'countdown'
 
-const countdownSeconds = 5
+const countdownSeconds = requiredMovementDurationMs / 1_000
 
 function App() {
   const [screen, setScreen] = useState<Screen>('movement')
@@ -29,7 +30,7 @@ function App() {
   const [playRequest, setPlayRequest] = useState(0)
   const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [secondsRemaining, setSecondsRemaining] = useState(countdownSeconds)
-  const [points, setPoints] = useState(0)
+  const points = screen === 'result' ? scoreQuiz(correctAnswers) : 0
   const movementIndexRef = useRef(0)
 
   useEffect(() => {
@@ -39,7 +40,6 @@ function App() {
 
     const answerTimer = window.setTimeout(() => {
       if (quizQuestionIndex === questionsPerRound - 1) {
-        setPoints(scoreQuiz(correctAnswers))
         setScreen('result')
         return
       }
@@ -52,7 +52,7 @@ function App() {
     }, 1_000)
 
     return () => window.clearTimeout(answerTimer)
-  }, [correctAnswers, isShowingAnswer, quizQuestionIndex])
+  }, [isShowingAnswer, quizQuestionIndex, quizOrder])
 
   const beginCountdown = useCallback(() => {
     setMovementPhase('countdown')
@@ -133,7 +133,7 @@ function App() {
     setPlayRequest(0)
     setActiveDurationMs(0)
     setSecondsRemaining(countdownSeconds)
-    setPoints(0)
+    setScreen('movement')
   }
 
   function startMovement() {
@@ -159,18 +159,6 @@ function App() {
     setMovementPhase('waitingForRecognition')
   }
 
-  const handleRecognitionStatusChange = useCallback((nextRecognitionStatus: RecognitionStatus) => {
-    setRecognitionStatus(nextRecognitionStatus)
-  }, [])
-
-  const handleActiveDurationChange = useCallback((nextActiveDurationMs: number) => {
-    setActiveDurationMs(nextActiveDurationMs)
-  }, [])
-
-  const handleRecognitionComplete = useCallback(() => {
-    advanceMovement()
-  }, [advanceMovement])
-
   function continueWithoutRecognition() {
     setFallbackTimerEnabled(true)
     setFallbackPromptReason(null)
@@ -194,16 +182,6 @@ function App() {
     if (answer === activeQuiz.correctAnswer) {
       setCorrectAnswers((count) => count + 1)
     }
-  }
-
-  function finishRound() {
-    resetRound()
-    setScreen('movement')
-  }
-
-  function playAgain() {
-    resetRound()
-    setScreen('movement')
   }
 
   const treeStage = getTreeStage(points)
@@ -238,15 +216,15 @@ function App() {
             activeDurationMs={activeDurationMs}
             secondsRemaining={secondsRemaining}
             totalMovements={movements.length}
-            onRecognitionComplete={handleRecognitionComplete}
-            onRecognitionStatusChange={handleRecognitionStatusChange}
-            onActiveDurationChange={handleActiveDurationChange}
+            onRecognitionComplete={advanceMovement}
+            onRecognitionStatusChange={setRecognitionStatus}
+            onActiveDurationChange={setActiveDurationMs}
             onSkip={advanceMovement}
             onStart={startMovement}
           />
         ) : null}
         {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
-        {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalQuestions={questionsPerRound} treeStage={treeStage} onFinish={finishRound} onPlayAgain={playAgain} /> : null}
+        {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalQuestions={questionsPerRound} treeStage={treeStage} onFinish={resetRound} onPlayAgain={resetRound} /> : null}
         <Modal
           className="recognition-fallback-modal"
           footer={(

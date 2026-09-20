@@ -5,8 +5,6 @@ export type TreeStage = {
 
 export type Movement = {
   title: string
-  guidance: string
-  focus: string
   videoSrc: string
 }
 
@@ -26,38 +24,28 @@ const pointsPerCorrectAnswer = 10
 export const movements: Movement[] = [
   {
     title: 'Side Arm Raise',
-    guidance: 'Raise both arms out to the sides with a comfortable range of motion.',
-    focus: 'Keep your shoulders relaxed and your chest open.',
     videoSrc: '/assets/side-arm-raise.mp4',
   },
   {
     title: 'Standing March',
-    guidance: 'March in place at a comfortable pace, lifting one knee at a time.',
-    focus: 'Keep your posture tall and use support if you need it.',
     videoSrc: '/assets/standing-march.mp4',
   },
   {
     title: 'Shallow Squat',
-    guidance: 'Bend your knees slightly, then return to standing.',
-    focus: 'Keep your weight balanced and your knees comfortable.',
     videoSrc: '/assets/shallow-squat.mp4',
   },
   {
     title: 'Standing Side Bend',
-    guidance: 'Gently bend to one side, then return to the middle.',
-    focus: 'Keep both feet grounded and move within a comfortable range.',
     videoSrc: '/assets/standing-side-bend.mp4',
   },
   {
     title: 'Side Leg Lift',
-    guidance: 'Lift one leg out to the side, then lower it with control.',
-    focus: 'Stand tall and use support if you need it.',
     videoSrc: '/assets/side-leg-lift.mp4',
   },
 ]
 
-export function createRandomMovementOrder(count: number, random = Math.random): number[] {
-  const order = Array.from({ length: count }, (_, index) => index)
+function shuffle<T>(items: readonly T[], random: () => number): T[] {
+  const order = [...items]
 
   for (let index = order.length - 1; index > 0; index -= 1) {
     const nextIndex = Math.floor(random() * (index + 1))
@@ -65,6 +53,10 @@ export function createRandomMovementOrder(count: number, random = Math.random): 
   }
 
   return order
+}
+
+export function createRandomMovementOrder(count: number, random = Math.random): number[] {
+  return shuffle(Array.from({ length: count }, (_, index) => index), random)
 }
 
 export function createRandomQuizOrder(count: number, random = Math.random): number[] {
@@ -72,17 +64,10 @@ export function createRandomQuizOrder(count: number, random = Math.random): numb
 }
 
 export function createRandomAnswerOrder(options: string[], random = Math.random): string[] {
-  const order = [...options]
-
-  for (let index = order.length - 1; index > 0; index -= 1) {
-    const nextIndex = Math.floor(random() * (index + 1))
-    ;[order[index], order[nextIndex]] = [order[nextIndex], order[index]]
-  }
-
-  return order
+  return shuffle(options, random)
 }
 
-const treeStages: TreeStage[] = [
+export const treeStages: TreeStage[] = [
   { name: 'Seed', minimumPoints: 0 },
   { name: 'Sprout', minimumPoints: 1 },
   { name: 'Young Tree', minimumPoints: 11 },
