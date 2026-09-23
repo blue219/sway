@@ -29,11 +29,11 @@ describe('round rewards', () => {
     expect(movements.every((movement) => movement.videoSrc.startsWith('/assets/') && movement.videoSrc.endsWith('.mp4'))).toBe(true)
   })
 
-  it('includes the fixed seated video sequence and leaves new movements model-free', () => {
+  it('includes the fixed seated video sequence and enables recognition for supported movements', () => {
     expect(seatedMovements).toEqual([
       { title: 'Seated knee extension', videoSrc: '/assets/seated-knee-extension.mp4' },
       { title: 'Seated torso twist', videoSrc: '/assets/seated-torso-twist.mp4', usePoseRecognition: false },
-      { title: 'Seated arm-opening', videoSrc: '/assets/seated-arm-opening.mp4', usePoseRecognition: false },
+      { title: 'Seated arm opening', videoSrc: '/assets/seated-arm-opening.mp4' },
       { title: 'Seated marching', videoSrc: '/assets/seated-marching.mp4', usePoseRecognition: false },
       { title: 'Seated Overhead Press', videoSrc: '/assets/seated-overhead-press.mp4', usePoseRecognition: false },
     ])

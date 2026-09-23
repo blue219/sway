@@ -56,9 +56,8 @@ export const seatedMovements: Movement[] = [
     usePoseRecognition: false,
   },
   {
-    title: 'Seated arm-opening',
+    title: 'Seated arm opening',
     videoSrc: '/assets/seated-arm-opening.mp4',
-    usePoseRecognition: false,
   },
   {
     title: 'Seated marching',

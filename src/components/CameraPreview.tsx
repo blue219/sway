@@ -29,6 +29,10 @@ const modelUrlsByMovement: Record<string, typeof defaultModelUrls> = {
     model: '/models/seated-knee-extension/model.json',
     metadata: '/models/seated-knee-extension/metadata.json',
   },
+  'Seated arm opening': {
+    model: '/models/seated-arm-opening/model.json',
+    metadata: '/models/seated-arm-opening/metadata.json',
+  },
 }
 const requiredLabels = ['Neutral', 'Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
 
