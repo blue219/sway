@@ -25,10 +25,6 @@ const modelUrlsByMovement: Record<string, typeof defaultModelUrls> = {
     model: '/models/standing-side-bend/model.json',
     metadata: '/models/standing-side-bend/metadata.json',
   },
-  'Seated knee extension': {
-    model: '/models/seated-knee-extension/model.json',
-    metadata: '/models/seated-knee-extension/metadata.json',
-  },
   'Seated arm opening': {
     model: '/models/seated-arm-opening/model.json',
     metadata: '/models/seated-arm-opening/metadata.json',
