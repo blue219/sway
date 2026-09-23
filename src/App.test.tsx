@@ -6,6 +6,7 @@ import { quizQuestions } from './game'
 import App from './App'
 
 const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
+const cameraRenderSpy = vi.hoisted(() => vi.fn())
 let nextRecognitionStatus: RecognitionStatus = { kind: 'ready' }
 let nextMovementRecognised = false
 
@@ -18,6 +19,7 @@ vi.mock('./components/CameraPreview', () => ({
     onActiveDurationChange: (activeDurationMs: number) => void
     onRecognitionStateChange: (isRecognised: boolean | null) => void
   }) => {
+    cameraRenderSpy()
     useEffect(() => {
       onRecognitionStatusChange(nextRecognitionStatus)
       onRecognitionStateChange(isTracking ? nextMovementRecognised : null)
@@ -38,7 +40,12 @@ vi.mock('./components/CameraPreview', () => ({
   },
 }))
 
+function chooseStanding() {
+  fireEvent.click(screen.getByRole('button', { name: /choose standing/i }))
+}
+
 function startAndCompleteMovementSequence() {
+  chooseStanding()
   fireEvent.click(screen.getByRole('button', { name: 'Start' }))
   for (let movement = 0; movement < 5; movement += 1) {
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
@@ -55,14 +62,74 @@ afterEach(() => {
   cleanup()
   nextRecognitionStatus = { kind: 'ready' }
   nextMovementRecognised = false
+  cameraRenderSpy.mockClear()
   vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
 describe('Whakakori Together round', () => {
+  it('starts with standing and seated choices without mounting the camera', () => {
+    render(<App />)
+
+    const choices = screen.getAllByRole('button', { name: /choose (standing|seated)/i })
+    expect(choices.map((choice) => choice.querySelector('.mode-card-title')?.textContent)).toEqual(['Standing', 'Seated'])
+    expect(choices.map((choice) => choice.querySelector('img')?.getAttribute('src'))).toEqual(['/assets/selection-standing.png', '/assets/selection-seated.png'])
+    expect(cameraRenderSpy).not.toHaveBeenCalled()
+
+    fireEvent.click(choices[1])
+    expect(screen.getByText('Coming soon')).toBeInTheDocument()
+    expect(cameraRenderSpy).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
+    expect(screen.getByRole('button', { name: /choose seated/i })).toBeInTheDocument()
+    expect(screen.queryByText('Coming soon')).not.toBeInTheDocument()
+
+    chooseStanding()
+    expect(cameraRenderSpy).toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
+  })
+
+  it('goes back through the visited screens and uses the logo to restart at selection', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    chooseStanding()
+
+    for (let movement = 0; movement < 5; movement += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    }
+    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+
+    for (let question = 0; question < 5; question += 1) {
+      const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
+      const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
+      const correctOption = screen.getAllByRole('radio').find((radio) => radio.closest('label')?.textContent?.includes(correctAnswer ?? ''))
+      expect(correctOption).toBeDefined()
+      fireEvent.click(correctOption!)
+      act(() => vi.advanceTimersByTime(1_000))
+    }
+
+    expect(screen.getByRole('heading', { name: 'Round complete' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
+    expect(screen.getAllByText('Question 5 of 5')).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
+    expect(screen.getByLabelText('Movement 5 of 5')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
+    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
+
+    chooseStanding()
+    fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
+    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Go back' })).not.toBeInTheDocument()
+
+    chooseStanding()
+    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
+  })
+
   it('advances immediately after five seconds of recognised movement', () => {
     vi.useFakeTimers()
     render(<App />)
+    chooseStanding()
 
     expect(movementTitles).toContain(screen.getByRole('heading', { level: 1 }).textContent)
     expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
@@ -79,6 +146,7 @@ describe('Whakakori Together round', () => {
   it('shows the live recognition state beside Hold while tracking', () => {
     nextMovementRecognised = true
     render(<App />)
+    chooseStanding()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
 
@@ -88,6 +156,7 @@ describe('Whakakori Together round', () => {
 
   it('skips the current movement and opens the quiz after the fifth skip', () => {
     render(<App />)
+    chooseStanding()
 
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
@@ -103,6 +172,7 @@ describe('Whakakori Together round', () => {
     vi.useFakeTimers()
     nextRecognitionStatus = { kind: 'unavailable', message: 'Camera is unavailable.' }
     render(<App />)
+    chooseStanding()
 
     expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
@@ -124,6 +194,7 @@ describe('Whakakori Together round', () => {
     nextRecognitionStatus = { kind: 'unavailable', message: 'Camera is unavailable.' }
     const pause = vi.spyOn(HTMLMediaElement.prototype, 'pause')
     render(<App />)
+    chooseStanding()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     const pausesAfterStart = pause.mock.calls.length
@@ -141,7 +212,10 @@ describe('Whakakori Together round', () => {
 
     startAndCompleteMovementSequence()
     const firstQuestion = screen.getByRole('heading', { level: 1 }).textContent
-    fireEvent.click(screen.getAllByRole('radio')[0])
+    const correctAnswer = quizQuestions.find((quiz) => quiz.question === firstQuestion)?.correctAnswer
+    const incorrectOption = screen.getAllByRole('radio').find((radio) => !radio.closest('label')?.textContent?.includes(correctAnswer ?? ''))
+    expect(incorrectOption).toBeDefined()
+    fireEvent.click(incorrectOption!)
 
     expect(document.querySelector('.quiz-option-feedback-correct')).toBeInTheDocument()
     expect(document.querySelector('.quiz-option-feedback-incorrect')).toBeInTheDocument()
@@ -179,8 +253,10 @@ describe('Whakakori Together round', () => {
 
     fireEvent.click(screen.getByRole('button', { name: resetAction }))
 
-    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
     expect(screen.getByLabelText('0 Wellbeing Points, Seed')).toBeInTheDocument()
+    chooseStanding()
+    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
   })
 })

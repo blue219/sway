@@ -1,6 +1,6 @@
 # Whakakori Together
 
-Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. Each round presents five movement videos in a random, non-repeating order, followed by five multiple-choice questions and a session-only wellbeing tree reward.
+Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. The opening screen offers standing and seated choices. Standing rounds present five movement videos in a random, non-repeating order, followed by five multiple-choice questions and a session-only wellbeing tree reward. Seated rounds are not yet available.
 
 ## Local startup
 
@@ -25,10 +25,10 @@ For a focused check, run `pnpm exec vitest run src/game.test.ts src/poseRecognit
 
 ## Repository structure
 
-- `src/App.tsx`: round state, screen transitions, quiz feedback, and timer fallback.
+- `src/App.tsx`: selection and round state, screen transitions, quiz feedback, and timer fallback.
 - `src/game.ts`: movement and quiz content, randomisation, scoring, and tree stages.
 - `src/poseRecognition.ts`: confidence threshold and cumulative recognition timer.
-- `src/components/`: header, movement, camera, quiz, and result presentation.
+- `src/components/`: header, movement-style selection, movement, camera, quiz, and result presentation.
 - `src/styles.css`: responsive styling layered over `animal-island-ui/style`.
 - `src/**/*.test.ts(x)` and `src/test/setup.ts`: Vitest and Testing Library regression coverage.
 - `public/assets/`, `public/models/`, `public/vendor/`: served media, movement classifiers, and legacy browser runtimes.
@@ -36,7 +36,9 @@ For a focused check, run `pnpm exec vitest run src/game.test.ts src/poseRecognit
 
 ## Interaction and accessibility
 
-- The round opens on one of five preloaded movement videos. Select **Start** to begin playback and recognition from the start. A movement completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. The next movement begins immediately after completion.
+- The opening screen uses two illustrated cards: **Standing** on the left and **Seated** on the right, stacked on mobile. Choosing Standing opens the existing five-movement round. Choosing Seated shows **Coming soon** in its card; it does not open a round or request camera permission.
+- The header shows **Go back** after navigating away from selection and returns through visited screens. Select the **Whakakori Together** logo at any time to reset the round and return to the opening screen.
+- The standing round opens on one of five preloaded movement videos. Select **Start** to begin playback and recognition from the start. A movement completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. The next movement begins immediately after completion.
 - The movement demonstrator loops the selected responsive native video player asset.
 - The movement page uses a two-card layout: the demonstration, movement counter, Start and Skip buttons are on the left; a live browser camera preview and cumulative `Hold 0.0/5 S` prompt are on the right. The cards stack on mobile. While recognition is active, a green check or red cross appears beside Hold. The preview requests video-only permission, processes footage in the browser, and stops its camera track when the movement page unmounts.
 - Start is available while the camera and pose model initialise. An initial `Neutral` prediction is not required. Only adjacent target predictions at or above 70% confidence and no more than 300 milliseconds apart add time; `Neutral`, low-confidence, and other movement predictions do not add time. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift.
@@ -48,7 +50,7 @@ For a focused check, run `pnpm exec vitest run src/game.test.ts src/poseRecognit
 
 ## Prototype boundaries
 
-- Scores and tree state are held only for the current round. Points are revealed on the result screen. Both **Play another round** and **Finish for today** reset the round and return to the first movement; refreshing also starts a new round.
+- Scores and tree state are held only for the current round. Points are revealed on the result screen. Both **Play another round** and **Finish for today** reset the round and return to the movement-style selection screen; refreshing also returns to selection.
 - There is no camera recording, medical guidance, account system, analytics, or facilitator dashboard. Pose classification only identifies the trained movement category; it does not assess exercise quality, range of motion, or safety.
 - The 15-question demonstration bank includes six illustrated and nine text-only questions about te reo Māori, community, welcome customs, food, art and taonga. Any future te reo Māori or community-specific content must be reviewed by fluent speakers and community partners before use.
 
@@ -57,6 +59,8 @@ For a focused check, run `pnpm exec vitest run src/game.test.ts src/poseRecognit
 This non-commercial prototype uses [animal-island-ui](https://github.com/guokaigdg/animal-island-ui) version 1.4.0 and imports its official style entry point. The dependency is licensed under CC BY-NC 4.0. Its attribution and non-commercial terms must remain in place; do not use this prototype or the component library in a commercial product.
 
 ## Pose model setup
+
+Five seated movement IDs (`seated-1` through `seated-5`) and a `SeatedMovementCatalog` type are reserved in `src/game.ts`. Each future entry must provide a movement title, demonstration video path, and model and metadata paths. Add the actual names and resources when they are available, then connect the seated choice to a seated round. No seated model or video is loaded by the current selection screen.
 
 The included models are dedicated two-class **Pose** models exported from Teachable Machine as TensorFlow.js. No training or file copying is required to run the supplied prototype. `CameraPreview.tsx` selects these paths by movement title:
 

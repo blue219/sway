@@ -3,18 +3,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AppHeader } from './components/AppHeader'
 import { type RecognitionStatus } from './components/CameraPreview'
 import { MovementScreen } from './components/MovementScreen'
+import { ModeSelectionScreen } from './components/ModeSelectionScreen'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
 import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
 import { requiredMovementDurationMs } from './poseRecognition'
 
-type Screen = 'movement' | 'quiz' | 'result'
+type Screen = 'selection' | 'movement' | 'quiz' | 'result'
 type MovementPhase = 'idle' | 'waitingForRecognition' | 'recognizing' | 'countdown'
 
 const countdownSeconds = requiredMovementDurationMs / 1_000
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('movement')
+  const [screen, setScreen] = useState<Screen>('selection')
   const [movementIndex, setMovementIndex] = useState(0)
   const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.length))
   const [quizOrder, setQuizOrder] = useState(() => createRandomQuizOrder(quizQuestions.length))
@@ -30,8 +31,51 @@ function App() {
   const [playRequest, setPlayRequest] = useState(0)
   const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [secondsRemaining, setSecondsRemaining] = useState(countdownSeconds)
+  const [selectionResetKey, setSelectionResetKey] = useState(0)
   const points = screen === 'result' ? scoreQuiz(correctAnswers) : 0
   const movementIndexRef = useRef(0)
+  const screenRef = useRef<Screen>('selection')
+  const screenHistoryRef = useRef<Screen[]>([])
+
+  const navigateToScreen = useCallback((nextScreen: Screen) => {
+    if (screenRef.current === nextScreen) {
+      return
+    }
+
+    screenHistoryRef.current.push(screenRef.current)
+    screenRef.current = nextScreen
+    setScreen(nextScreen)
+  }, [])
+
+  const goBack = useCallback(() => {
+    const previousScreen = screenHistoryRef.current.pop()
+    if (!previousScreen) {
+      return
+    }
+
+    const currentScreen = screenRef.current
+    screenRef.current = previousScreen
+    setScreen(previousScreen)
+
+    if (currentScreen === 'movement') {
+      setMovementPhase('idle')
+      setActiveDurationMs(0)
+      setFallbackPromptReason(null)
+    }
+
+    if (currentScreen === 'quiz' && previousScreen === 'movement') {
+      const currentQuiz = quizQuestions[quizOrder[quizQuestionIndex]]
+      if (isShowingAnswer && selectedAnswer === currentQuiz.correctAnswer) {
+        setCorrectAnswers((count) => Math.max(0, count - 1))
+      }
+      setSelectedAnswer(null)
+      setIsShowingAnswer(false)
+      setMovementPhase('idle')
+      setActiveDurationMs(0)
+      setFallbackPromptReason(null)
+      setPlayRequest((request) => request + 1)
+    }
+  }, [isShowingAnswer, quizOrder, quizQuestionIndex, selectedAnswer])
 
   useEffect(() => {
     if (!isShowingAnswer) {
@@ -40,7 +84,7 @@ function App() {
 
     const answerTimer = window.setTimeout(() => {
       if (quizQuestionIndex === questionsPerRound - 1) {
-        setScreen('result')
+        navigateToScreen('result')
         return
       }
 
@@ -52,7 +96,7 @@ function App() {
     }, 1_000)
 
     return () => window.clearTimeout(answerTimer)
-  }, [isShowingAnswer, quizQuestionIndex, quizOrder])
+  }, [isShowingAnswer, navigateToScreen, quizQuestionIndex, quizOrder])
 
   const beginCountdown = useCallback(() => {
     setMovementPhase('countdown')
@@ -63,7 +107,7 @@ function App() {
     const currentMovementIndex = movementIndexRef.current
     if (currentMovementIndex === movements.length - 1) {
       setMovementPhase('idle')
-      setScreen('quiz')
+      navigateToScreen('quiz')
       return
     }
 
@@ -79,7 +123,7 @@ function App() {
     // Wait for the next movement's dedicated model before starting recognition.
     setRecognitionStatus({ kind: 'checking' })
     setMovementPhase('waitingForRecognition')
-  }, [beginCountdown, fallbackTimerEnabled])
+  }, [beginCountdown, fallbackTimerEnabled, navigateToScreen])
 
   useEffect(() => {
     if (movementPhase !== 'countdown') {
@@ -133,7 +177,10 @@ function App() {
     setPlayRequest(0)
     setActiveDurationMs(0)
     setSecondsRemaining(countdownSeconds)
-    setScreen('movement')
+    setSelectionResetKey((key) => key + 1)
+    screenHistoryRef.current = []
+    screenRef.current = 'selection'
+    setScreen('selection')
   }
 
   function startMovement() {
@@ -204,7 +251,15 @@ function App() {
   return (
     <Cursor>
       <div className="app-shell">
-        <AppHeader points={points} roundPreview={roundPreview} treeStage={treeStage} />
+        <AppHeader
+          canGoBack={screenHistoryRef.current.length > 0}
+          onGoBack={goBack}
+          onGoHome={resetRound}
+          points={points}
+          roundPreview={roundPreview}
+          treeStage={treeStage}
+        />
+        {screen === 'selection' ? <ModeSelectionScreen key={selectionResetKey} onChooseStanding={() => navigateToScreen('movement')} /> : null}
         {screen === 'movement' ? (
           <MovementScreen
             currentMovement={movementIndex + 1}

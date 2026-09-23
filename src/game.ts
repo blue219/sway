@@ -8,6 +8,12 @@ export type Movement = {
   videoSrc: string
 }
 
+export const seatedMovementIds = ['seated-1', 'seated-2', 'seated-3', 'seated-4', 'seated-5'] as const
+export type SeatedMovementId = (typeof seatedMovementIds)[number]
+export type SeatedMovementCatalog = Record<SeatedMovementId, Movement & {
+  modelUrls: { model: string; metadata: string }
+}>
+
 export type QuizQuestion = {
   question: string
   options: string[]
