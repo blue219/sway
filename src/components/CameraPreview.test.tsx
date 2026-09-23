@@ -314,4 +314,19 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/seated-arm-opening/model.json', '/models/seated-arm-opening/metadata.json'))
     await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
   })
+
+  it('loads the seated torso twist model with its Idle baseline label', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Idle', 'Seated torso twist'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Seated torso twist')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/seated-torso-twist/model.json', '/models/seated-torso-twist/metadata.json'))
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
+  })
 })

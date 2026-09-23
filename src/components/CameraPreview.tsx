@@ -33,6 +33,10 @@ const modelUrlsByMovement: Record<string, typeof defaultModelUrls> = {
     model: '/models/seated-arm-opening/model.json',
     metadata: '/models/seated-arm-opening/metadata.json',
   },
+  'Seated torso twist': {
+    model: '/models/seated-torso-twist/model.json',
+    metadata: '/models/seated-torso-twist/metadata.json',
+  },
 }
 const requiredLabels = ['Neutral', 'Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
 

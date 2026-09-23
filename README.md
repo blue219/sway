@@ -60,7 +60,7 @@ This non-commercial prototype uses [animal-island-ui](https://github.com/guokaig
 
 ## Pose model setup
 
-The seated catalog in `src/game.ts` contains Seated knee extension, Seated torso twist, Seated arm opening, Seated marching, and Seated Overhead Press in a fixed order. Knee extension and arm opening use dedicated models; torso twist, marching, and overhead press currently show their videos without pose recognition.
+The seated catalog in `src/game.ts` contains Seated knee extension, Seated torso twist, Seated arm opening, Seated marching, and Seated Overhead Press in a fixed order. Knee extension, torso twist, and arm opening use dedicated models; marching and overhead press currently show their videos without pose recognition.
 
 The included models are dedicated two-class **Pose** models exported from Teachable Machine as TensorFlow.js. No training or file copying is required to run the supplied prototype. `CameraPreview.tsx` selects these paths by movement title:
 
@@ -71,6 +71,7 @@ The included models are dedicated two-class **Pose** models exported from Teacha
 - `public/models/standing-side-bend/`: `Neutral` and `Standing Side Bend`
 - `public/models/seated-knee-extension/`: `Idle` and `Seated knee extension`
 - `public/models/seated-arm-opening/`: `Idle` and `Seated arm opening`
+- `public/models/seated-torso-twist/`: `Idle` and `Seated torso twist`
 
 The model labels must match these values exactly:
 
@@ -81,9 +82,9 @@ The model labels must match these values exactly:
 - `Standing Side Bend`
 - `Side Leg Lift`
 
-The seated knee extension labels are `Idle` and `Seated knee extension`. The seated arm opening labels are `Idle` and `Seated arm opening`.
+The seated knee extension labels are `Idle` and `Seated knee extension`. The seated arm opening labels are `Idle` and `Seated arm opening`. The seated torso twist labels are `Idle` and `Seated torso twist`.
 
-To replace a classifier, copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into its movement directory. A shared six-class standing model is also supported: place its files in `public/models/pose/` and remove the standing entries in `modelUrlsByMovement` in `CameraPreview.tsx` so those movements use `defaultModelUrls`. Replacing only `public/models/pose/` changes Standing March, not the other four standing classifiers. The two supported seated movements each use a dedicated model.
+To replace a classifier, copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into its movement directory. A shared six-class standing model is also supported: place its files in `public/models/pose/` and remove the standing entries in `modelUrlsByMovement` in `CameraPreview.tsx` so those movements use `defaultModelUrls`. Replacing only `public/models/pose/` changes Standing March, not the other four standing classifiers. Each supported seated movement uses a dedicated model.
 
 The seated demonstration videos are `public/assets/seated-knee-extension.mp4`, `public/assets/seated-torso-twist.mp4`, `public/assets/seated-arm-opening.mp4`, `public/assets/seated-marching.mp4`, and `public/assets/seated-overhead-press.mp4`. The app loads the movement classifiers from local files. `index.html` loads TensorFlow.js before the Teachable Machine browser runtime from `public/vendor/`; Vite does not bundle those legacy runtimes. The runtime can download PoseNet backbone weights from `storage.googleapis.com`, so fully offline recognition is not guaranteed. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
 

@@ -53,7 +53,6 @@ export const seatedMovements: Movement[] = [
   {
     title: 'Seated torso twist',
     videoSrc: '/assets/seated-torso-twist.mp4',
-    usePoseRecognition: false,
   },
   {
     title: 'Seated arm opening',
