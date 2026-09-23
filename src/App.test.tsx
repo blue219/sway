@@ -68,7 +68,7 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
-  it('shuffles seated movements and completes model-free movements with the shared timer', () => {
+  it('shuffles seated movements and completes the model-free movement with the shared timer', () => {
     vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
     render(<App />)
@@ -95,11 +95,12 @@ describe('Whakakori Together round', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
     completeCountdown()
-    expect(screen.getByRole('heading', { name: 'Seated Overhead Press' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Seated overhead press' })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 4 of 5')).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Pose model pending' })).toHaveTextContent('Model coming soon')
+    expect(screen.getByRole('region', { name: 'Movement camera preview' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    completeCountdown()
+    fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     expect(screen.getByRole('heading', { name: 'Seated knee extension' })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 5 of 5')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()

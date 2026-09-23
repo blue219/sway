@@ -35,7 +35,7 @@ describe('round rewards', () => {
       { title: 'Seated torso twist', videoSrc: '/assets/seated-torso-twist.mp4' },
       { title: 'Seated arm opening', videoSrc: '/assets/seated-arm-opening.mp4' },
       { title: 'Seated marching', videoSrc: '/assets/seated-marching.mp4', usePoseRecognition: false },
-      { title: 'Seated Overhead Press', videoSrc: '/assets/seated-overhead-press.mp4', usePoseRecognition: false },
+      { title: 'Seated overhead press', videoSrc: '/assets/seated-overhead-press.mp4' },
     ])
   })
 

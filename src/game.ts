@@ -64,9 +64,8 @@ export const seatedMovements: Movement[] = [
     usePoseRecognition: false,
   },
   {
-    title: 'Seated Overhead Press',
+    title: 'Seated overhead press',
     videoSrc: '/assets/seated-overhead-press.mp4',
-    usePoseRecognition: false,
   },
 ]
 
