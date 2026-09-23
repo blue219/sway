@@ -1,6 +1,6 @@
 # Whakakori Together
 
-Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. The opening screen offers standing and seated choices. Standing rounds present five movement videos in a random, non-repeating order; the seated round presents knee extension, torso twist, arm opening, marching, then overhead press. Both modes continue to five multiple-choice questions and a session-only wellbeing tree reward.
+Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. The opening screen offers standing and seated choices. Both rounds present their five movement videos in a random, non-repeating order, followed by five multiple-choice questions and a session-only wellbeing tree reward.
 
 ## Local startup
 
@@ -38,10 +38,10 @@ For focused round and recognition checks, run `pnpm exec vitest run src/App.test
 
 - The opening screen uses two illustrated cards: **Standing** on the left and **Seated** on the right, stacked on mobile. Choosing Standing opens the five-movement round. Choosing Seated opens knee extension, torso twist, arm opening, marching, and overhead press, followed by the same five-question quiz.
 - The header shows **Go back** after navigating away from selection and returns through visited screens. Select the **Whakakori Together** logo at any time to reset the round and return to the opening screen.
-- The standing round opens on one of five preloaded movement videos; the seated round presents knee extension, torso twist, arm opening, marching, and overhead press in that order. Select **Start** to begin playback and recognition from the start. A movement completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. Torso twist, arm opening, marching, and overhead press show their videos without requesting the camera or loading pose models; use **Skip** to continue.
+- Each round opens on one of its five movement videos. Select **Start** to begin playback and recognition. A movement with a model completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. Seated marching and overhead press have no supplied classifiers, so **Start** uses the existing five-second timer for those movements. **Skip** remains available for every movement.
 - The movement demonstrator loops the selected responsive native video player asset.
 - The movement page uses a two-card layout: the demonstration, movement counter, Start and Skip buttons are on the left; a live browser camera preview or a model-pending placeholder is on the right. The cards stack on mobile. While recognition is active, a green check or red cross appears beside Hold. The preview requests video-only permission, processes footage in the browser, and stops its camera track when the movement page unmounts.
-- Start is available while the camera and pose model initialise. An initial baseline prediction (`Neutral` or `Idle`) is not required. Only adjacent target predictions at or above 70% confidence and no more than 300 milliseconds apart add time; baseline, low-confidence, and other movement predictions do not add time. Standing rounds contain Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift. Seated rounds contain Seated knee extension, Seated torso twist, Seated arm-opening, Seated marching, then Seated Overhead Press.
+- Start is available while the camera and pose model initialise. Neither mode requires an initial baseline prediction (`Neutral` or `Idle`). Only adjacent target predictions at or above 70% confidence and no more than 300 milliseconds apart add time; baseline, low-confidence, and other movement predictions do not add time. Standing rounds contain Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift. Seated rounds contain Seated knee extension, Seated torso twist, Seated arm opening, Seated marching, and Seated Overhead Press.
 - After the movement sequence, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - On the quiz, answer choices are shuffled for every question. Use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
 - Select **Skip** beside **Start** to move directly to the next movement. Skipping the final movement opens the quiz.
@@ -60,7 +60,7 @@ This non-commercial prototype uses [animal-island-ui](https://github.com/guokaig
 
 ## Pose model setup
 
-The seated catalog in `src/game.ts` contains Seated knee extension, Seated torso twist, Seated arm opening, Seated marching, and Seated Overhead Press in a fixed order. Knee extension, torso twist, and arm opening use dedicated models; marching and overhead press currently show their videos without pose recognition.
+The seated catalog in `src/game.ts` contains Seated knee extension, Seated torso twist, Seated arm opening, Seated marching, and Seated Overhead Press. Both modes use the same random round ordering, camera preprocessing, inference pipeline, confidence threshold, and cumulative recognition timer. Knee extension, torso twist, and arm opening use dedicated seated models. Marching and overhead press have no seated classifiers, so they complete with a five-second timer after Start. Standing classifier weights cannot recognize their seated labels.
 
 The included models are dedicated two-class **Pose** models exported from Teachable Machine as TensorFlow.js. No training or file copying is required to run the supplied prototype. `CameraPreview.tsx` selects these paths by movement title:
 

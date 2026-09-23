@@ -118,7 +118,7 @@ function App() {
     setActiveDurationMs(0)
     setPlayRequest((request) => request + 1)
 
-    const nextMovement = activeMovements[currentMovementIndex + 1]
+    const nextMovement = activeMovements[movementOrder[currentMovementIndex + 1]]
     if (fallbackTimerEnabled || nextMovement.usePoseRecognition === false) {
       if (fallbackTimerEnabled) {
         beginCountdown()
@@ -130,7 +130,7 @@ function App() {
     // Wait for the next movement's dedicated model before starting recognition.
     setRecognitionStatus({ kind: 'checking' })
     setMovementPhase('waitingForRecognition')
-  }, [activeMovements, beginCountdown, fallbackTimerEnabled, navigateToScreen])
+  }, [activeMovements, beginCountdown, fallbackTimerEnabled, movementOrder, navigateToScreen])
 
   useEffect(() => {
     if (movementPhase !== 'countdown') {
@@ -192,9 +192,7 @@ function App() {
 
   function startRound(style: MovementStyle) {
     const selectedMovements = style === 'seated' ? seatedMovements : movements
-    const nextMovementOrder = style === 'seated'
-      ? selectedMovements.map((_, index) => index)
-      : createRandomMovementOrder(selectedMovements.length)
+    const nextMovementOrder = createRandomMovementOrder(selectedMovements.length)
     const nextQuizOrder = createRandomQuizOrder(quizQuestions.length)
 
     movementIndexRef.current = 0
@@ -228,6 +226,7 @@ function App() {
 
     const currentMovement = activeMovements[movementOrder[movementIndex]]
     if (currentMovement.usePoseRecognition === false) {
+      beginCountdown()
       return
     }
 

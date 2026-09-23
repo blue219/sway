@@ -29,7 +29,7 @@ describe('round rewards', () => {
     expect(movements.every((movement) => movement.videoSrc.startsWith('/assets/') && movement.videoSrc.endsWith('.mp4'))).toBe(true)
   })
 
-  it('includes the fixed seated video sequence and enables recognition for supported movements', () => {
+  it('includes five seated videos and enables recognition for supported movements', () => {
     expect(seatedMovements).toEqual([
       { title: 'Seated knee extension', videoSrc: '/assets/seated-knee-extension.mp4' },
       { title: 'Seated torso twist', videoSrc: '/assets/seated-torso-twist.mp4' },

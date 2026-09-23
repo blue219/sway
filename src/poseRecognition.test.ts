@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { createMovementTimer, requiredMovementDurationMs } from './poseRecognition'
 
 describe('movement timer', () => {
-  it('starts tracking the target movement without requiring a neutral stance first', () => {
-    const timer = createMovementTimer('Standing March')
+  it.each(['Standing March', 'Seated knee extension'])('starts tracking %s without requiring a baseline stance first', (movementLabel) => {
+    const timer = createMovementTimer(movementLabel)
 
-    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 0)).toMatchObject({ activeDurationMs: 0, phase: 'tracking' })
-    expect(timer.observe({ className: 'Standing March', probability: 0.9 }, 100)).toMatchObject({ activeDurationMs: 100, phase: 'tracking' })
+    expect(timer.observe({ className: movementLabel, probability: 0.9 }, 0)).toMatchObject({ activeDurationMs: 0, phase: 'tracking' })
+    expect(timer.observe({ className: movementLabel, probability: 0.9 }, 100)).toMatchObject({ activeDurationMs: 100, phase: 'tracking' })
   })
 
   it('completes after five seconds of continuous recognised movement at 70% confidence', () => {

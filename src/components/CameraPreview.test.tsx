@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CameraPreview } from './CameraPreview'
 
@@ -209,6 +209,56 @@ describe('CameraPreview', () => {
     expect(context.scale).toHaveBeenCalledWith(-1, 1)
     expect(context.drawImage).toHaveBeenCalledWith(video, 80, 0, 480, 480, 0, 0, 257, 257)
     expect(activeDuration).toHaveBeenLastCalledWith(0)
+  })
+
+  it('applies the shared recognition timer to a seated movement from the first target prediction', async () => {
+    const { stream } = createCameraStream()
+    let frameCallback: FrameRequestCallback | undefined
+    let frameTime = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => frameTime)
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      clearRect: vi.fn(),
+      drawImage: vi.fn(),
+      restore: vi.fn(),
+      save: vi.fn(),
+      scale: vi.fn(),
+      translate: vi.fn(),
+    } as unknown as ReturnType<HTMLCanvasElement['getContext']>)
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: vi.fn().mockResolvedValue(stream) } })
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback
+      return 12
+    }))
+    mockLoad.mockResolvedValue({
+      dispose: vi.fn(),
+      estimatePose: vi.fn().mockResolvedValue({ posenetOutput: {} }),
+      getClassLabels: () => ['Idle', 'Seated knee extension'],
+      predict: vi.fn().mockResolvedValue([
+        { className: 'Idle', probability: 0.05 },
+        { className: 'Seated knee extension', probability: 0.95 },
+      ]),
+    })
+
+    const { activeDuration, completion } = renderPreview(true, 'Seated knee extension')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    Object.defineProperties(video, {
+      readyState: { configurable: true, value: HTMLMediaElement.HAVE_CURRENT_DATA },
+      videoHeight: { configurable: true, value: 480 },
+      videoWidth: { configurable: true, value: 640 },
+    })
+    fireEvent.playing(video)
+    await waitFor(() => expect(frameCallback).toBeDefined())
+
+    for (let frame = 0; frame <= 50; frame += 1) {
+      frameTime = frame * 100
+      await act(async () => {
+        frameCallback?.(frameTime)
+      })
+    }
+
+    expect(activeDuration).toHaveBeenLastCalledWith(5_000)
+    expect(completion).toHaveBeenCalledOnce()
   })
 
   it('accepts a two-class model for its matching movement', async () => {
