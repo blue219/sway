@@ -6,16 +6,18 @@ import { MovementScreen } from './components/MovementScreen'
 import { ModeSelectionScreen } from './components/ModeSelectionScreen'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
-import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz } from './game'
+import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements } from './game'
 import { requiredMovementDurationMs } from './poseRecognition'
 
 type Screen = 'selection' | 'movement' | 'quiz' | 'result'
 type MovementPhase = 'idle' | 'waitingForRecognition' | 'recognizing' | 'countdown'
+type MovementStyle = 'standing' | 'seated'
 
 const countdownSeconds = requiredMovementDurationMs / 1_000
 
 function App() {
   const [screen, setScreen] = useState<Screen>('selection')
+  const [movementStyle, setMovementStyle] = useState<MovementStyle>('standing')
   const [movementIndex, setMovementIndex] = useState(0)
   const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.length))
   const [quizOrder, setQuizOrder] = useState(() => createRandomQuizOrder(quizQuestions.length))
@@ -31,8 +33,8 @@ function App() {
   const [playRequest, setPlayRequest] = useState(0)
   const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [secondsRemaining, setSecondsRemaining] = useState(countdownSeconds)
-  const [selectionResetKey, setSelectionResetKey] = useState(0)
   const points = screen === 'result' ? scoreQuiz(correctAnswers) : 0
+  const activeMovements = movementStyle === 'seated' ? seatedMovements : movements
   const movementIndexRef = useRef(0)
   const screenRef = useRef<Screen>('selection')
   const screenHistoryRef = useRef<Screen[]>([])
@@ -105,7 +107,7 @@ function App() {
 
   const advanceMovement = useCallback(() => {
     const currentMovementIndex = movementIndexRef.current
-    if (currentMovementIndex === movements.length - 1) {
+    if (currentMovementIndex === activeMovements.length - 1) {
       setMovementPhase('idle')
       navigateToScreen('quiz')
       return
@@ -123,7 +125,7 @@ function App() {
     // Wait for the next movement's dedicated model before starting recognition.
     setRecognitionStatus({ kind: 'checking' })
     setMovementPhase('waitingForRecognition')
-  }, [beginCountdown, fallbackTimerEnabled, navigateToScreen])
+  }, [activeMovements, beginCountdown, fallbackTimerEnabled, navigateToScreen])
 
   useEffect(() => {
     if (movementPhase !== 'countdown') {
@@ -164,6 +166,7 @@ function App() {
 
     movementIndexRef.current = 0
     setMovementIndex(0)
+    setMovementStyle('standing')
     setMovementOrder(createRandomMovementOrder(movements.length))
     setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
@@ -177,10 +180,32 @@ function App() {
     setPlayRequest(0)
     setActiveDurationMs(0)
     setSecondsRemaining(countdownSeconds)
-    setSelectionResetKey((key) => key + 1)
     screenHistoryRef.current = []
     screenRef.current = 'selection'
     setScreen('selection')
+  }
+
+  function startRound(style: MovementStyle) {
+    const selectedMovements = style === 'seated' ? seatedMovements : movements
+    const nextQuizOrder = createRandomQuizOrder(quizQuestions.length)
+
+    movementIndexRef.current = 0
+    setMovementStyle(style)
+    setMovementIndex(0)
+    setMovementOrder(createRandomMovementOrder(selectedMovements.length))
+    setQuizOrder(nextQuizOrder)
+    setQuizQuestionIndex(0)
+    setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
+    setSelectedAnswer(null)
+    setIsShowingAnswer(false)
+    setCorrectAnswers(0)
+    setMovementPhase('idle')
+    setFallbackTimerEnabled(false)
+    setFallbackPromptReason(null)
+    setPlayRequest(0)
+    setActiveDurationMs(0)
+    setSecondsRemaining(countdownSeconds)
+    navigateToScreen('movement')
   }
 
   function startMovement() {
@@ -238,7 +263,7 @@ function App() {
       <img alt="A tūī bird, the quiz subject" src="/assets/tui.png" />
       <div>
         <span>Coming up</span>
-        <strong>Quiz after {movements.length} movement</strong>
+        <strong>Quiz after {activeMovements.length} {activeMovements.length === 1 ? 'movement' : 'movements'}</strong>
       </div>
     </div>
   ) : screen === 'quiz' ? (
@@ -259,18 +284,18 @@ function App() {
           roundPreview={roundPreview}
           treeStage={treeStage}
         />
-        {screen === 'selection' ? <ModeSelectionScreen key={selectionResetKey} onChooseStanding={() => navigateToScreen('movement')} /> : null}
+        {screen === 'selection' ? <ModeSelectionScreen onChooseStanding={() => startRound('standing')} onChooseSeated={() => startRound('seated')} /> : null}
         {screen === 'movement' ? (
           <MovementScreen
             currentMovement={movementIndex + 1}
             isCountingDown={movementPhase === 'countdown'}
             isTracking={movementPhase === 'recognizing'}
             isWaitingForRecognition={movementPhase === 'waitingForRecognition'}
-            movement={movements[movementOrder[movementIndex]]}
+            movement={activeMovements[movementOrder[movementIndex]]}
             playRequest={playRequest}
             activeDurationMs={activeDurationMs}
             secondsRemaining={secondsRemaining}
-            totalMovements={movements.length}
+            totalMovements={activeMovements.length}
             onRecognitionComplete={advanceMovement}
             onRecognitionStatusChange={setRecognitionStatus}
             onActiveDurationChange={setActiveDurationMs}

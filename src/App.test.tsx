@@ -68,7 +68,7 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
-  it('starts with standing and seated choices without mounting the camera', () => {
+  it('opens the seated movement and retains the standing round entry', () => {
     render(<App />)
 
     const choices = screen.getAllByRole('button', { name: /choose (standing|seated)/i })
@@ -77,12 +77,16 @@ describe('Whakakori Together round', () => {
     expect(cameraRenderSpy).not.toHaveBeenCalled()
 
     fireEvent.click(choices[1])
-    expect(screen.getByText('Coming soon')).toBeInTheDocument()
-    expect(cameraRenderSpy).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'Seated knee extension' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Movement 1 of 1')).toBeInTheDocument()
+    expect(cameraRenderSpy).toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
+    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
     expect(screen.getByRole('button', { name: /choose seated/i })).toBeInTheDocument()
-    expect(screen.queryByText('Coming soon')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Seated knee extension' })).not.toBeInTheDocument()
 
     chooseStanding()
     expect(cameraRenderSpy).toHaveBeenCalled()

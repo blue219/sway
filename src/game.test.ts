@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovementIds } from './game'
+import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements } from './game'
 
 describe('round rewards', () => {
   it('awards 10 points for each correct quiz answer', () => {
@@ -29,8 +29,10 @@ describe('round rewards', () => {
     expect(movements.every((movement) => movement.videoSrc.startsWith('/assets/') && movement.videoSrc.endsWith('.mp4'))).toBe(true)
   })
 
-  it('reserves five stable seated movement identifiers', () => {
-    expect(seatedMovementIds).toEqual(['seated-1', 'seated-2', 'seated-3', 'seated-4', 'seated-5'])
+  it('includes the seated knee extension demonstration', () => {
+    expect(seatedMovements).toEqual([
+      { title: 'Seated knee extension', videoSrc: '/assets/seated-knee-extension.mp4' },
+    ])
   })
 
   it('creates a shuffled quiz order without repeated questions', () => {

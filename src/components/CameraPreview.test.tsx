@@ -284,4 +284,19 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/side-arm-raise/model.json', '/models/side-arm-raise/metadata.json'))
     await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
   })
+
+  it('loads the seated knee extension model with its Idle baseline label', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Idle', 'Seated knee extension'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Seated knee extension')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/seated-knee-extension/model.json', '/models/seated-knee-extension/metadata.json'))
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
+  })
 })

@@ -1,6 +1,6 @@
 # Whakakori Together
 
-Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. The opening screen offers standing and seated choices. Standing rounds present five movement videos in a random, non-repeating order, followed by five multiple-choice questions and a session-only wellbeing tree reward. Seated rounds are not yet available.
+Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. The opening screen offers standing and seated choices. Standing rounds present five movement videos in a random, non-repeating order; the seated round presents one knee extension video. Both modes continue to five multiple-choice questions and a session-only wellbeing tree reward.
 
 ## Local startup
 
@@ -11,7 +11,7 @@ pnpm install
 pnpm dev
 ```
 
-Open the local URL shown by Vite. The prototype does not require a backend, account, or environment variables. Pose recognition requires camera permission in a secure browser context (localhost or HTTPS). The five movement classifiers and browser runtimes are included; the PoseNet backbone weights may still be fetched from Google Cloud Storage by the runtime.
+Open the local URL shown by Vite. The prototype does not require a backend, account, or environment variables. Pose recognition requires camera permission in a secure browser context (localhost or HTTPS). The movement classifiers and browser runtimes are included; the PoseNet backbone weights may still be fetched from Google Cloud Storage by the runtime.
 
 ## Commands
 
@@ -21,7 +21,7 @@ pnpm lint
 pnpm build
 ```
 
-For a focused check, run `pnpm exec vitest run src/game.test.ts src/poseRecognition.test.ts`. `pnpm test:watch` runs tests interactively. The build writes a static site to `dist/`; deploy at the site root because asset and model URLs are absolute paths. ESLint checks project code and excludes the vendored, minified runtimes.
+For focused round and recognition checks, run `pnpm exec vitest run src/App.test.tsx src/game.test.ts src/components/CameraPreview.test.tsx src/poseRecognition.test.ts`. `pnpm test:watch` runs tests interactively. The build writes a static site to `dist/`; deploy at the site root because asset and model URLs are absolute paths. ESLint checks project code and excludes the vendored, minified runtimes.
 
 ## Repository structure
 
@@ -36,15 +36,15 @@ For a focused check, run `pnpm exec vitest run src/game.test.ts src/poseRecognit
 
 ## Interaction and accessibility
 
-- The opening screen uses two illustrated cards: **Standing** on the left and **Seated** on the right, stacked on mobile. Choosing Standing opens the existing five-movement round. Choosing Seated shows **Coming soon** in its card; it does not open a round or request camera permission.
+- The opening screen uses two illustrated cards: **Standing** on the left and **Seated** on the right, stacked on mobile. Choosing Standing opens the five-movement round. Choosing Seated opens the knee extension movement, followed by the same five-question quiz.
 - The header shows **Go back** after navigating away from selection and returns through visited screens. Select the **Whakakori Together** logo at any time to reset the round and return to the opening screen.
-- The standing round opens on one of five preloaded movement videos. Select **Start** to begin playback and recognition from the start. A movement completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. The next movement begins immediately after completion.
+- The standing round opens on one of five preloaded movement videos; the seated round has one knee extension movement. Select **Start** to begin playback and recognition from the start. A movement completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. The next movement begins immediately after completion.
 - The movement demonstrator loops the selected responsive native video player asset.
 - The movement page uses a two-card layout: the demonstration, movement counter, Start and Skip buttons are on the left; a live browser camera preview and cumulative `Hold 0.0/5 S` prompt are on the right. The cards stack on mobile. While recognition is active, a green check or red cross appears beside Hold. The preview requests video-only permission, processes footage in the browser, and stops its camera track when the movement page unmounts.
-- Start is available while the camera and pose model initialise. An initial `Neutral` prediction is not required. Only adjacent target predictions at or above 70% confidence and no more than 300 milliseconds apart add time; `Neutral`, low-confidence, and other movement predictions do not add time. Each round contains Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift.
-- After all five movements, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
+- Start is available while the camera and pose model initialise. An initial baseline prediction (`Neutral` or `Idle`) is not required. Only adjacent target predictions at or above 70% confidence and no more than 300 milliseconds apart add time; baseline, low-confidence, and other movement predictions do not add time. Standing rounds contain Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift; the seated round contains Seated knee extension.
+- After the movement sequence, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - On the quiz, answer choices are shuffled for every question. Use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
-- Select **Skip** beside **Start** to move directly to the next movement. Skipping the fifth movement opens the quiz.
+- Select **Skip** beside **Start** to move directly to the next movement. Skipping the final movement opens the quiz.
 - Each correct answer earns 10 Wellbeing Points, for a maximum of 50 points per round.
 - The UI uses large controls, visible keyboard focus, high contrast, responsive layouts, and reduced motion preferences.
 
@@ -60,7 +60,7 @@ This non-commercial prototype uses [animal-island-ui](https://github.com/guokaig
 
 ## Pose model setup
 
-Five seated movement IDs (`seated-1` through `seated-5`) and a `SeatedMovementCatalog` type are reserved in `src/game.ts`. Each future entry must provide a movement title, demonstration video path, and model and metadata paths. Add the actual names and resources when they are available, then connect the seated choice to a seated round. No seated model or video is loaded by the current selection screen.
+The seated catalog in `src/game.ts` currently contains Seated knee extension. Add a movement title, demonstration video, and dedicated model files for each further seated action before adding it to this catalog.
 
 The included models are dedicated two-class **Pose** models exported from Teachable Machine as TensorFlow.js. No training or file copying is required to run the supplied prototype. `CameraPreview.tsx` selects these paths by movement title:
 
@@ -69,6 +69,7 @@ The included models are dedicated two-class **Pose** models exported from Teacha
 - `public/models/shallow-squat/`: `Neutral` and `Shallow Squat`
 - `public/models/side-leg-lift/`: `Neutral` and `Side Leg Lift`
 - `public/models/standing-side-bend/`: `Neutral` and `Standing Side Bend`
+- `public/models/seated-knee-extension/`: `Idle` and `Seated knee extension`
 
 The model labels must match these values exactly:
 
@@ -79,9 +80,11 @@ The model labels must match these values exactly:
 - `Standing Side Bend`
 - `Side Leg Lift`
 
-To replace a classifier, copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into its movement directory. A shared six-class model is also supported: place its files in `public/models/pose/` and remove the dedicated entries in `modelUrlsByMovement` in `CameraPreview.tsx` so all movements use `defaultModelUrls`. Replacing only `public/models/pose/` changes Standing March, not the other four movements.
+The seated classifier labels are `Idle` and `Seated knee extension`.
 
-The app loads the movement classifiers from these local files. `index.html` loads TensorFlow.js before the Teachable Machine browser runtime from `public/vendor/`; Vite does not bundle those legacy runtimes. The runtime can download PoseNet backbone weights from `storage.googleapis.com`, so fully offline recognition is not guaranteed. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
+To replace a classifier, copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into its movement directory. A shared six-class standing model is also supported: place its files in `public/models/pose/` and remove the standing entries in `modelUrlsByMovement` in `CameraPreview.tsx` so those movements use `defaultModelUrls`. Replacing only `public/models/pose/` changes Standing March, not the other four standing classifiers. The seated movement continues to use its dedicated model.
+
+The seated demonstration video is `public/assets/seated-knee-extension.mp4`. The app loads the movement classifiers from local files. `index.html` loads TensorFlow.js before the Teachable Machine browser runtime from `public/vendor/`; Vite does not bundle those legacy runtimes. The runtime can download PoseNet backbone weights from `storage.googleapis.com`, so fully offline recognition is not guaranteed. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
 
 ### Camera preprocessing invariant
 
@@ -91,4 +94,4 @@ Do not replace this canvas with the raw `<video>` element. The preview's CSS `tr
 
 Keep the `CameraPreview` regression test that verifies the model receives a mirrored, centred 257 × 257 canvas and that a high-confidence `Neutral` prediction leaves the active duration at zero.
 
-A two-class model containing `Neutral` and one movement label is supported only for that movement. Keep movement titles and model labels aligned when editing the content.
+A two-class model containing `Neutral` or `Idle` and one movement label is supported only for that movement. Keep movement titles and model labels aligned when editing the content.

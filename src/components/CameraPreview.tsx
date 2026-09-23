@@ -25,6 +25,10 @@ const modelUrlsByMovement: Record<string, typeof defaultModelUrls> = {
     model: '/models/standing-side-bend/model.json',
     metadata: '/models/standing-side-bend/metadata.json',
   },
+  'Seated knee extension': {
+    model: '/models/seated-knee-extension/model.json',
+    metadata: '/models/seated-knee-extension/metadata.json',
+  },
 }
 const requiredLabels = ['Neutral', 'Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
 
@@ -46,7 +50,8 @@ type CameraPreviewProps = {
 
 function hasRequiredLabels(labels: string[], movementLabel: string) {
   const isCompleteModel = labels.length === requiredLabels.length && requiredLabels.every((label) => labels.includes(label))
-  const isMovementModel = labels.length === 2 && labels.includes('Neutral') && labels.includes(movementLabel)
+  const hasNeutralLabel = labels.includes('Neutral') || labels.includes('Idle')
+  const isMovementModel = labels.length === 2 && hasNeutralLabel && labels.includes(movementLabel)
 
   return isCompleteModel || isMovementModel
 }

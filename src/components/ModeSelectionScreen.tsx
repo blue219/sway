@@ -1,12 +1,9 @@
-import { useState } from 'react'
-
 type ModeSelectionScreenProps = {
   onChooseStanding: () => void
+  onChooseSeated: () => void
 }
 
-export function ModeSelectionScreen({ onChooseStanding }: ModeSelectionScreenProps) {
-  const [showSeatedNotice, setShowSeatedNotice] = useState(false)
-
+export function ModeSelectionScreen({ onChooseStanding, onChooseSeated }: ModeSelectionScreenProps) {
   return (
     <main className="movement-screen mode-selection-screen" aria-labelledby="mode-selection-title">
       <h1 className="mode-selection-title" id="mode-selection-title">Choose how to move</h1>
@@ -15,10 +12,10 @@ export function ModeSelectionScreen({ onChooseStanding }: ModeSelectionScreenPro
         <img alt="" className="mode-card-illustration" src="/assets/selection-standing.png" />
         <span className="mode-card-action">Choose standing</span>
       </button>
-      <button className="movement-camera-card mode-card" type="button" onClick={() => setShowSeatedNotice(true)}>
+      <button className="movement-camera-card mode-card" type="button" onClick={onChooseSeated}>
         <span className="mode-card-title">Seated</span>
         <img alt="" className="mode-card-illustration" src="/assets/selection-seated.png" />
-        <span aria-live="polite" className="mode-card-action">{showSeatedNotice ? 'Coming soon' : 'Choose seated'}</span>
+        <span className="mode-card-action">Choose seated</span>
       </button>
     </main>
   )
