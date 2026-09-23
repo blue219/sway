@@ -118,8 +118,13 @@ function App() {
     setActiveDurationMs(0)
     setPlayRequest((request) => request + 1)
 
-    if (fallbackTimerEnabled) {
-      beginCountdown()
+    const nextMovement = activeMovements[currentMovementIndex + 1]
+    if (fallbackTimerEnabled || nextMovement.usePoseRecognition === false) {
+      if (fallbackTimerEnabled) {
+        beginCountdown()
+      } else {
+        setMovementPhase('idle')
+      }
       return
     }
     // Wait for the next movement's dedicated model before starting recognition.
@@ -187,12 +192,15 @@ function App() {
 
   function startRound(style: MovementStyle) {
     const selectedMovements = style === 'seated' ? seatedMovements : movements
+    const nextMovementOrder = style === 'seated'
+      ? selectedMovements.map((_, index) => index)
+      : createRandomMovementOrder(selectedMovements.length)
     const nextQuizOrder = createRandomQuizOrder(quizQuestions.length)
 
     movementIndexRef.current = 0
     setMovementStyle(style)
     setMovementIndex(0)
-    setMovementOrder(createRandomMovementOrder(selectedMovements.length))
+    setMovementOrder(nextMovementOrder)
     setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
     setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
@@ -215,6 +223,11 @@ function App() {
 
     if (fallbackTimerEnabled) {
       beginCountdown()
+      return
+    }
+
+    const currentMovement = activeMovements[movementOrder[movementIndex]]
+    if (currentMovement.usePoseRecognition === false) {
       return
     }
 
@@ -292,6 +305,7 @@ function App() {
             isTracking={movementPhase === 'recognizing'}
             isWaitingForRecognition={movementPhase === 'waitingForRecognition'}
             movement={activeMovements[movementOrder[movementIndex]]}
+            usePoseRecognition={activeMovements[movementOrder[movementIndex]].usePoseRecognition !== false}
             playRequest={playRequest}
             activeDurationMs={activeDurationMs}
             secondsRemaining={secondsRemaining}

@@ -12,6 +12,7 @@ type MovementScreenProps = {
   isTracking: boolean
   isWaitingForRecognition: boolean
   movement: Movement
+  usePoseRecognition: boolean
   activeDurationMs: number
   secondsRemaining: number
   totalMovements: number
@@ -29,6 +30,7 @@ export function MovementScreen({
   isTracking,
   isWaitingForRecognition,
   movement,
+  usePoseRecognition,
   activeDurationMs,
   secondsRemaining,
   totalMovements,
@@ -40,10 +42,12 @@ export function MovementScreen({
   onStart,
 }: MovementScreenProps) {
   const [isMovementRecognised, setIsMovementRecognised] = useState<boolean | null>(null)
-  const progressLabel = isCountingDown ? 'Next movement in' : 'Hold'
+  const progressLabel = isCountingDown ? 'Next movement in' : usePoseRecognition ? 'Hold' : ''
   const progressValue = isCountingDown
     ? `${secondsRemaining} s`
-    : `${(activeDurationMs / 1_000).toFixed(1)}/${requiredMovementDurationMs / 1_000} S`
+    : usePoseRecognition
+      ? `${(activeDurationMs / 1_000).toFixed(1)}/${requiredMovementDurationMs / 1_000} S`
+      : ''
 
   return (
     <main className="movement-screen" aria-labelledby="movement-title">
@@ -76,23 +80,31 @@ export function MovementScreen({
           </div>
         </div>
       </section>
-      <section className="movement-camera-card" aria-label="Movement camera preview">
+      <section className="movement-camera-card" aria-label={usePoseRecognition ? 'Movement camera preview' : isCountingDown ? 'Movement timer' : 'Pose model pending'}>
         <div className="movement-camera-heading">
-          <div className="movement-progress" aria-live="polite">
-            {isTracking && isMovementRecognised !== null ? <span aria-label={isMovementRecognised ? 'Movement recognised' : 'Movement not recognised'} className={`movement-recognition-indicator${isMovementRecognised ? ' movement-recognition-indicator-success' : ''}`}>{isMovementRecognised ? '✓' : '×'}</span> : null}
-            <span>{progressLabel}</span>
-            <strong>{progressValue}</strong>
-          </div>
+          {usePoseRecognition || isCountingDown ? (
+            <div className="movement-progress" aria-live="polite">
+              {isTracking && isMovementRecognised !== null ? <span aria-label={isMovementRecognised ? 'Movement recognised' : 'Movement not recognised'} className={`movement-recognition-indicator${isMovementRecognised ? ' movement-recognition-indicator-success' : ''}`}>{isMovementRecognised ? '✓' : '×'}</span> : null}
+              <span>{progressLabel}</span>
+              <strong>{progressValue}</strong>
+            </div>
+          ) : null}
         </div>
         <div className="camera-preview-panel">
-          <CameraPreview
-            isTracking={isTracking}
-            movementLabel={movement.title}
-            onComplete={onRecognitionComplete}
-            onRecognitionStateChange={setIsMovementRecognised}
-            onRecognitionStatusChange={onRecognitionStatusChange}
-            onActiveDurationChange={onActiveDurationChange}
-          />
+          {usePoseRecognition ? (
+            <CameraPreview
+              isTracking={isTracking}
+              movementLabel={movement.title}
+              onComplete={onRecognitionComplete}
+              onRecognitionStateChange={setIsMovementRecognised}
+              onRecognitionStatusChange={onRecognitionStatusChange}
+              onActiveDurationChange={onActiveDurationChange}
+            />
+          ) : (
+            <div aria-label={isCountingDown ? 'Timer mode' : 'Pose model not connected yet'} className="camera-preview-area movement-model-placeholder">
+              {isCountingDown ? 'Timer mode' : 'Model coming soon'}
+            </div>
+          )}
         </div>
       </section>
     </main>

@@ -78,6 +78,7 @@ h2 { margin-bottom: 10px; font-size: clamp(1.45rem, 2.3vw, 2.15rem); line-height
 .movement-action-card .start-movement-button { width: clamp(112px, 12vw, 160px); min-height: 50px; margin-left: 0; }
 .skip-movement-button { min-height: 50px; flex: 0 0 auto; font-weight: 900 !important; }
 .camera-preview-area { isolation: isolate; width: 100%; }
+.movement-model-placeholder { display: grid; place-items: center; color: #4a5a8a; font-size: clamp(1.4rem, 3vw, 2.5rem); font-weight: 900; background: linear-gradient(145deg, #f2f4ff, #e8f5f3); }
 .camera-preview-area > video { display: block; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 .camera-guide { position: absolute; z-index: 1; inset: 28px; background: linear-gradient(#fff, #fff) left top / 42px 4px no-repeat, linear-gradient(#fff, #fff) left top / 4px 42px no-repeat, linear-gradient(#fff, #fff) right top / 42px 4px no-repeat, linear-gradient(#fff, #fff) right top / 4px 42px no-repeat, linear-gradient(#fff, #fff) left bottom / 42px 4px no-repeat, linear-gradient(#fff, #fff) left bottom / 4px 42px no-repeat, linear-gradient(#fff, #fff) right bottom / 42px 4px no-repeat, linear-gradient(#fff, #fff) right bottom / 4px 42px no-repeat; border-radius: 18px; }
 .mode-selection-screen { grid-template-rows: auto minmax(0, 1fr); align-content: center; }

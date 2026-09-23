@@ -6,6 +6,7 @@ export type TreeStage = {
 export type Movement = {
   title: string
   videoSrc: string
+  usePoseRecognition?: boolean
 }
 
 export type QuizQuestion = {
@@ -48,6 +49,26 @@ export const seatedMovements: Movement[] = [
   {
     title: 'Seated knee extension',
     videoSrc: '/assets/seated-knee-extension.mp4',
+  },
+  {
+    title: 'Seated torso twist',
+    videoSrc: '/assets/seated-torso-twist.mp4',
+    usePoseRecognition: false,
+  },
+  {
+    title: 'Seated arm-opening',
+    videoSrc: '/assets/seated-arm-opening.mp4',
+    usePoseRecognition: false,
+  },
+  {
+    title: 'Seated marching',
+    videoSrc: '/assets/seated-marching.mp4',
+    usePoseRecognition: false,
+  },
+  {
+    title: 'Seated Overhead Press',
+    videoSrc: '/assets/seated-overhead-press.mp4',
+    usePoseRecognition: false,
   },
 ]
 
