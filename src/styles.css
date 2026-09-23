@@ -89,7 +89,6 @@ h2 { margin-bottom: 10px; font-size: clamp(1.45rem, 2.3vw, 2.15rem); line-height
 .mode-card-title { font-size: clamp(2rem, 3vw, 3rem); font-weight: 900; line-height: 1.1; }
 .mode-card-illustration { display: block; width: 100%; min-height: 0; flex: 1 1 auto; object-fit: contain; }
 .mode-card-action { display: inline-flex; align-items: center; justify-content: center; min-height: 58px; padding: 12px 28px; color: #fff; font-size: clamp(1.1rem, 1.5vw, 1.35rem); font-weight: 900; border-radius: 20px; background: #237942; }
-.movement-camera-card.mode-card .mode-card-action { background: #4a5a8a; }
 .dialog-actions, .result-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .fallback-dialog-copy { margin: 0 0 12px; color: #725d42; font-size: 1.1rem; font-weight: 800; line-height: 1.45; }
 
