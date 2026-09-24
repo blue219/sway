@@ -88,8 +88,19 @@ export function createRandomQuizOrder(count: number, random = Math.random): numb
   return createRandomMovementOrder(count, random).slice(0, Math.min(count, questionsPerRound))
 }
 
-export function createRandomAnswerOrder(options: string[], random = Math.random): string[] {
-  return shuffle(options, random)
+export function createBalancedAnswerOrders(questions: readonly QuizQuestion[], random = Math.random): [string, string][] {
+  // Keep both hand choices useful in every round while randomizing their positions.
+  const correctFirstCount = Math.floor(questions.length / 2) + (questions.length % 2 === 1 && random() < 0.5 ? 1 : 0)
+  const correctFirst = shuffle(questions.map((_, index) => index < correctFirstCount), random)
+
+  return questions.map((question, index) => {
+    const [first, second] = question.options
+    const otherAnswer = first === question.correctAnswer ? second : first
+    const answers: [string, string] = correctFirst[index]
+      ? [question.correctAnswer, otherAnswer]
+      : [otherAnswer, question.correctAnswer]
+    return answers
+  })
 }
 
 export const treeStages: TreeStage[] = [

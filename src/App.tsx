@@ -7,7 +7,7 @@ import { ModeSelectionScreen } from './components/ModeSelectionScreen'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
 import { ScoreRecordList } from './components/ScoreRecordList'
-import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements, treeStages } from './game'
+import { createBalancedAnswerOrders, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements, treeStages } from './game'
 import { requiredMovementDurationMs } from './poseRecognition'
 import { clearScoreHistory, loadScoreHistory, saveScoreHistory, totalScore } from './scoreHistory'
 
@@ -46,7 +46,7 @@ function App() {
   const [quizQuestionIndex, setQuizQuestionIndex] = useState(0)
   const [quizIntroVisible, setQuizIntroVisible] = useState(false)
   const [quizIntroSecondsRemaining, setQuizIntroSecondsRemaining] = useState(quizIntroCountdownSeconds)
-  const [answerOrder, setAnswerOrder] = useState(() => createRandomAnswerOrder(quizQuestions[quizOrder[0]].options))
+  const [answerOrders, setAnswerOrders] = useState(() => createBalancedAnswerOrders(quizOrder.map((index) => quizQuestions[index])))
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isShowingAnswer, setIsShowingAnswer] = useState(false)
   const [correctAnswers, setCorrectAnswers] = useState(0)
@@ -151,7 +151,6 @@ function App() {
 
       const nextQuestionIndex = quizQuestionIndex + 1
       setQuizQuestionIndex(nextQuestionIndex)
-      setAnswerOrder(createRandomAnswerOrder(quizQuestions[quizOrder[nextQuestionIndex]].options))
       setSelectedAnswer(null)
       setIsShowingAnswer(false)
     }, 1_000)
@@ -241,7 +240,7 @@ function App() {
     setQuizIntroSecondsRemaining(quizIntroCountdownSeconds)
     quizIntroRemainingRef.current = quizIntroCountdownSeconds
     setQuizIntroVisible(false)
-    setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
+    setAnswerOrders(createBalancedAnswerOrders(nextQuizOrder.map((index) => quizQuestions[index])))
     setSelectedAnswer(null)
     setIsShowingAnswer(false)
     setCorrectAnswers(0)
@@ -273,7 +272,7 @@ function App() {
     setQuizIntroSecondsRemaining(quizIntroCountdownSeconds)
     quizIntroRemainingRef.current = quizIntroCountdownSeconds
     setQuizIntroVisible(false)
-    setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
+    setAnswerOrders(createBalancedAnswerOrders(nextQuizOrder.map((index) => quizQuestions[index])))
     setSelectedAnswer(null)
     setIsShowingAnswer(false)
     setCorrectAnswers(0)
@@ -386,7 +385,7 @@ function App() {
             onStart={startMovement}
           />
         ) : null}
-        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} introSecondsRemaining={quizIntroSecondsRemaining} isIntroVisible={quizIntroVisible} isShowingAnswer={isShowingAnswer} isPaused={historyOpen} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
+        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrders[quizQuestionIndex]} currentQuestion={quizQuestionIndex + 1} introSecondsRemaining={quizIntroSecondsRemaining} isIntroVisible={quizIntroVisible} isShowingAnswer={isShowingAnswer} isPaused={historyOpen} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
         {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalPoints={totalPoints} totalQuestions={questionsPerRound} treeStage={treeStage} records={historyState.records} onClearRecords={clearRecords} onPlayAgain={resetRound} /> : null}
         <Modal
           className="records-modal"

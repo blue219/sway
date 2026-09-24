@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements } from './game'
+import { createBalancedAnswerOrders, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements } from './game'
 
 describe('round rewards', () => {
   it('awards 10 points for each correct quiz answer', () => {
@@ -51,11 +51,18 @@ describe('round rewards', () => {
     expect(questionOrder.every((index) => index >= 0 && index < quizQuestions.length)).toBe(true)
   })
 
-  it('shuffles answer choices without modifying the question bank', () => {
-    const options = ['A', 'B', 'C', 'D']
+  it('places correct answers in both A and B across each five-question round', () => {
+    const questions = quizQuestions.slice(0, questionsPerRound)
+    const originalOptions = questions.map((question) => [...question.options])
 
-    expect(createRandomAnswerOrder(options, () => 0)).toEqual(['B', 'C', 'D', 'A'])
-    expect(options).toEqual(['A', 'B', 'C', 'D'])
+    for (const random of [() => 0, () => 0.99]) {
+      const orders = createBalancedAnswerOrders(questions, random)
+      const correctA = orders.filter((order, index) => order[0] === questions[index].correctAnswer).length
+
+      expect([correctA, questionsPerRound - correctA].sort()).toEqual([2, 3])
+      orders.forEach((order, index) => expect([...order].sort()).toEqual([...originalOptions[index]].sort()))
+      expect(questions.map((question) => question.options)).toEqual(originalOptions)
+    }
   })
 
   it('includes ten illustrated questions with two distinct answers each', () => {

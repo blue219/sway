@@ -354,6 +354,7 @@ describe('Whakakori Together round', () => {
 
     expect(document.querySelector('.quiz-option-correct')).toBeInTheDocument()
     expect(document.querySelector('.quiz-option-incorrect')).toBeInTheDocument()
+    expect(screen.getByText(`Correct answer: ${correctAnswer}`)).toHaveClass('screen-reader-only')
     expect(document.querySelector('.celebration-bursts-answer')).not.toBeInTheDocument()
     screen.getAllByRole('button', { name: /Option [AB]:/ }).forEach((button) => expect(button).toBeDisabled())
 
@@ -368,6 +369,28 @@ describe('Whakakori Together round', () => {
     expect(answerButton(secondCorrectAnswer ?? '')?.parentElement?.querySelector('.celebration-bursts-answer')).toBeInTheDocument()
     act(() => vi.advanceTimersByTime(1_000))
     expect(document.querySelector('.celebration-bursts-answer')).not.toBeInTheDocument()
+  })
+
+  it('shows correct answers under both A and B during a round', () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    render(<App />)
+
+    startAndCompleteMovementSequence()
+    finishQuizIntro()
+    const correctLetters: string[] = []
+
+    for (let question = 0; question < 5; question += 1) {
+      const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
+      const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer ?? ''
+      const correctOption = answerButton(correctAnswer)
+      correctLetters.push(correctOption?.getAttribute('aria-label')?.match(/^Option ([AB]):/)?.[1] ?? '')
+      fireEvent.click(correctOption!)
+      act(() => vi.advanceTimersByTime(1_000))
+    }
+
+    expect(correctLetters.filter((letter) => letter === 'A')).toHaveLength(3)
+    expect(correctLetters.filter((letter) => letter === 'B')).toHaveLength(2)
   })
 
   it('saves one score per completed round and grows the tree from cumulative points', () => {

@@ -78,7 +78,7 @@ export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions,
                   )
                 })}
               </div>
-              <p aria-live="polite" className="quiz-feedback-message">
+              <p aria-live="polite" className="screen-reader-only">
                 {isShowingAnswer ? `Correct answer: ${quiz.correctAnswer}` : ''}
               </p>
             </div>
