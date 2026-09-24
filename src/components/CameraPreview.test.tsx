@@ -379,4 +379,34 @@ describe('CameraPreview', () => {
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/seated-overhead-press/model.json', '/models/seated-overhead-press/metadata.json'))
     await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
   })
+
+  it('loads the seated arm reach model with its Idle baseline label', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Idle', 'Seated arm reach'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Seated arm reach')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/seated-arm-reach/model.json', '/models/seated-arm-reach/metadata.json'))
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
+  })
+
+  it('loads the seated forward reach model with its Idle baseline label', async () => {
+    const { stream } = createCameraStream()
+    const getUserMedia = vi.fn().mockResolvedValue(stream)
+    mockLoad.mockResolvedValue({ dispose: vi.fn(), getClassLabels: () => ['Idle', 'Seated Forward Reach'] })
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+
+    const { recognitionStatus } = renderPreview(false, 'Seated Forward Reach')
+    const video = screen.getByLabelText('Live camera preview') as HTMLVideoElement
+    await waitFor(() => expect(video.srcObject).toBe(stream))
+    fireEvent.playing(video)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/seated-forward-reach/model.json', '/models/seated-forward-reach/metadata.json'))
+    await waitFor(() => expect(recognitionStatus).toHaveBeenLastCalledWith({ kind: 'ready' }))
+  })
 })

@@ -37,6 +37,14 @@ const modelUrlsByMovement: Record<string, typeof defaultModelUrls> = {
     model: '/models/seated-overhead-press/model.json',
     metadata: '/models/seated-overhead-press/metadata.json',
   },
+  'Seated arm reach': {
+    model: '/models/seated-arm-reach/model.json',
+    metadata: '/models/seated-arm-reach/metadata.json',
+  },
+  'Seated Forward Reach': {
+    model: '/models/seated-forward-reach/model.json',
+    metadata: '/models/seated-forward-reach/metadata.json',
+  },
 }
 const requiredLabels = ['Neutral', 'Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
 

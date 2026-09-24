@@ -68,7 +68,7 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
-  it('shuffles five seated movements and uses the timer for movements without classifiers', () => {
+  it('shuffles five seated movements and recognizes arm reach and forward reach', () => {
     vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
     render(<App />)
@@ -91,16 +91,12 @@ describe('Whakakori Together round', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     expect(screen.getByRole('heading', { name: 'Seated arm reach' })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 3 of 5')).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Pose model pending' })).toHaveTextContent('Model coming soon')
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
-    completeCountdown()
+    expect(screen.getByRole('region', { name: 'Movement camera preview' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     expect(screen.getByRole('heading', { name: 'Seated Forward Reach' })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 4 of 5')).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Pose model pending' })).toHaveTextContent('Model coming soon')
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
-    completeCountdown()
+    expect(screen.getByRole('region', { name: 'Movement camera preview' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     expect(screen.getByRole('heading', { name: 'Seated torso twist' })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 5 of 5')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()

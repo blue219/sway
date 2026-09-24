@@ -61,12 +61,10 @@ export const seatedMovements: Movement[] = [
   {
     title: 'Seated arm reach',
     videoSrc: '/assets/seated-arm-reach.mp4',
-    usePoseRecognition: false,
   },
   {
     title: 'Seated Forward Reach',
     videoSrc: '/assets/seated-forward-reach.mp4',
-    usePoseRecognition: false,
   },
 ]
 
