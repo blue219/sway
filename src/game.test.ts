@@ -58,7 +58,7 @@ describe('round rewards', () => {
       question.options.length === 2 &&
       new Set(question.options).size === 2 &&
       question.options.includes(question.correctAnswer) &&
-      question.image?.src.endsWith('.svg'),
+      question.image?.src.endsWith('.webp'),
     )).toBe(true)
   })
 })

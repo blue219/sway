@@ -96,9 +96,9 @@ h2 { margin-bottom: 10px; font-size: clamp(1.45rem, 2.3vw, 2.15rem); line-height
 .quiz-question-heading { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 6px 12px; }
 .quiz-question-heading .movement-index { margin: 0; font-size: 1.05rem; }
 .quiz-question-heading button { min-height: 48px; font-weight: 800 !important; }
-.quiz-question-body { display: flex; min-width: 0; min-height: 0; flex-direction: column; align-items: stretch; justify-content: center; padding: clamp(8px, 1.5vw, 20px); text-align: center; }
-.quiz-illustration { display: block; width: min(100%, 340px); max-height: clamp(155px, 28vh, 240px); align-self: center; object-fit: contain; }
-.quiz-question-body h1 { margin: 14px 0 18px; color: #1f3830; font-size: clamp(1.8rem, 2.7vw, 2.8rem); line-height: 1.15; letter-spacing: -.03em; }
+.quiz-question-body { display: grid; grid-template-rows: minmax(180px, 1fr) auto auto auto; min-width: 0; min-height: 0; align-items: stretch; padding: clamp(8px, 1.5vw, 20px); text-align: center; }
+.quiz-illustration { display: block; width: 100%; height: 100%; min-height: 0; max-width: none; max-height: none; align-self: center; object-fit: contain; }
+.quiz-question-body h1 { margin: 8px 0 12px; color: #1f3830; font-size: clamp(1.8rem, 2.7vw, 2.8rem); line-height: 1.15; letter-spacing: -.03em; }
 .quiz-answer-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .quiz-answer-button { display: flex; align-items: center; gap: clamp(6px, .8vw, 12px); width: 100%; min-width: 0; min-height: 76px; padding: clamp(8px, 1vw, 14px); color: #1f3830; font-size: clamp(1rem, 1.8vw, 1.65rem); font-weight: 850; text-align: left; border: 3px solid #a2d9c4; border-radius: 22px; background: #f1fbf5; cursor: pointer; }
 .quiz-answer-button strong { display: grid; width: clamp(36px, 4vw, 54px); height: clamp(36px, 4vw, 54px); flex: 0 0 auto; place-items: center; color: #fff; border-radius: 16px; background: #237942; }
