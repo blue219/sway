@@ -63,6 +63,11 @@ export const seatedMovements: Movement[] = [
     videoSrc: '/assets/seated-arm-reach.mp4',
     usePoseRecognition: false,
   },
+  {
+    title: 'Seated Forward Reach',
+    videoSrc: '/assets/seated-forward-reach.mp4',
+    usePoseRecognition: false,
+  },
 ]
 
 function shuffle<T>(items: readonly T[], random: () => number): T[] {
