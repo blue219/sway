@@ -1,6 +1,7 @@
 import { Button, Card } from 'animal-island-ui'
 import type { TreeStage } from '../game'
 import type { ScoreRecord } from '../scoreHistory'
+import { CelebrationBursts } from './CelebrationBursts'
 import { ScoreRecordList } from './ScoreRecordList'
 
 type ResultScreenProps = {
@@ -17,6 +18,7 @@ type ResultScreenProps = {
 export function ResultScreen({ correctAnswers, totalQuestions, points, totalPoints, treeStage, records, onClearRecords, onPlayAgain }: ResultScreenProps) {
   return (
     <main className="screen result-screen">
+      <CelebrationBursts variant="result" />
       <Card className="result-panel" color="app-pink" pattern="app-pink" aria-labelledby="result-title">
         <div className="result-copy">
           <p className="result-eyebrow">Round complete</p>

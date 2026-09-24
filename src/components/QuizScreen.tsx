@@ -2,6 +2,7 @@ import { Button } from 'animal-island-ui'
 import { useState } from 'react'
 import type { QuizQuestion } from '../game'
 import type { QuizChoice } from '../quizRecognition'
+import { CelebrationBursts } from './CelebrationBursts'
 import { QuizCameraPreview } from './QuizCameraPreview'
 
 type QuizScreenProps = {
@@ -62,16 +63,18 @@ export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions,
                       ? ' quiz-option-incorrect'
                       : ''
                   return (
-                    <button
-                      aria-label={`Option ${letter}: ${answer}`}
-                      className={`quiz-answer-button${feedback}`}
-                      disabled={isShowingAnswer || isPaused}
-                      type="button"
-                      key={answer}
-                      onClick={() => onAnswer(answer)}
-                    >
-                      <strong>{letter}</strong><span>{answer}</span>
-                    </button>
+                    <div className="quiz-answer-wrap" key={answer}>
+                      <button
+                        aria-label={`Option ${letter}: ${answer}`}
+                        className={`quiz-answer-button${feedback}`}
+                        disabled={isShowingAnswer || isPaused}
+                        type="button"
+                        onClick={() => onAnswer(answer)}
+                      >
+                        <strong>{letter}</strong><span>{answer}</span>
+                      </button>
+                      {isShowingAnswer && selectedAnswer === answer && answer === quiz.correctAnswer ? <CelebrationBursts variant="answer" /> : null}
+                    </div>
                   )
                 })}
               </div>

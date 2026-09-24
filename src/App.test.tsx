@@ -354,12 +354,20 @@ describe('Whakakori Together round', () => {
 
     expect(document.querySelector('.quiz-option-correct')).toBeInTheDocument()
     expect(document.querySelector('.quiz-option-incorrect')).toBeInTheDocument()
+    expect(document.querySelector('.celebration-bursts-answer')).not.toBeInTheDocument()
     screen.getAllByRole('button', { name: /Option [AB]:/ }).forEach((button) => expect(button).toBeDisabled())
 
     act(() => vi.advanceTimersByTime(1_000))
 
     expect(screen.getByText('Question 2 of 5')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(firstQuestion)
+    const secondQuestion = screen.getByRole('heading', { level: 1 }).textContent
+    const secondCorrectAnswer = quizQuestions.find((quiz) => quiz.question === secondQuestion)?.correctAnswer
+    fireEvent.click(answerButton(secondCorrectAnswer ?? '')!)
+    expect(document.querySelectorAll('.celebration-bursts-answer .celebration-burst')).toHaveLength(3)
+    expect(answerButton(secondCorrectAnswer ?? '')?.parentElement?.querySelector('.celebration-bursts-answer')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(1_000))
+    expect(document.querySelector('.celebration-bursts-answer')).not.toBeInTheDocument()
   })
 
   it('saves one score per completed round and grows the tree from cumulative points', () => {
@@ -367,6 +375,7 @@ describe('Whakakori Together round', () => {
     render(<App />)
     completePerfectRound()
     expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
+    expect(document.querySelectorAll('.celebration-bursts-result .celebration-burst')).toHaveLength(10)
     expect(screen.getByText(/You answered 5 of 5 questions correctly/)).toBeInTheDocument()
     expect(screen.getByText('Wellbeing Points this round')).toBeInTheDocument()
     expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
