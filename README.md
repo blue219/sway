@@ -1,6 +1,6 @@
 # Whakakori Together
 
-Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. The opening screen offers standing and seated choices. Standing rounds present five movement videos and seated rounds present three, in random, non-repeating order, followed by five multiple-choice questions and a session-only wellbeing tree reward.
+Whakakori Together is a non-commercial React prototype for a facilitator-supported movement and quiz activity for older adults. The opening screen offers standing and seated choices. Standing rounds present five movement videos and seated rounds present four, in random, non-repeating order, followed by five multiple-choice questions and a session-only wellbeing tree reward.
 
 ## Local startup
 
@@ -36,12 +36,12 @@ For focused round and recognition checks, run `pnpm exec vitest run src/App.test
 
 ## Interaction and accessibility
 
-- The opening screen uses two illustrated cards: **Standing** on the left and **Seated** on the right, stacked on mobile. Choosing Standing opens the five-movement round. Choosing Seated opens a random order of torso twist, arm opening, and overhead press, followed by the same five-question quiz.
+- The opening screen uses two illustrated cards: **Standing** on the left and **Seated** on the right, stacked on mobile. Choosing Standing opens the five-movement round. Choosing Seated opens a random order of torso twist, arm opening, overhead press, and arm reach, followed by the same five-question quiz.
 - The header shows **Go back** after navigating away from selection and returns through visited screens. Select the **Whakakori Together** logo at any time to reset the round and return to the opening screen.
-- Each round opens on a movement video. Select **Start** to begin playback and recognition. A movement completes after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. **Skip** remains available for every movement.
+- Each round opens on a movement video. Select **Start** to begin playback and recognition. Movements with a model complete after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. Seated arm reach uses a five-second timer because it has no classifier. **Skip** remains available for every movement.
 - The movement demonstrator loops the selected responsive native video player asset.
 - The movement page uses a two-card layout: the demonstration, movement counter, Start and Skip buttons are on the left; a live browser camera preview or a model-pending placeholder is on the right. The cards stack on mobile. While recognition is active, a green check or red cross appears beside Hold. The preview requests video-only permission, processes footage in the browser, and stops its camera track when the movement page unmounts.
-- Start is available while the camera and pose model initialise. Neither mode requires an initial baseline prediction (`Neutral` or `Idle`). Only adjacent target predictions at or above 70% confidence and no more than 300 milliseconds apart add time; baseline, low-confidence, and other movement predictions do not add time. Standing rounds contain Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift. Seated rounds contain Seated torso twist, Seated arm opening, and Seated overhead press.
+- Start is available while the camera and pose model initialise. Neither mode requires an initial baseline prediction (`Neutral` or `Idle`). Only adjacent target predictions at or above 70% confidence and no more than 300 milliseconds apart add time; baseline, low-confidence, and other movement predictions do not add time. Standing rounds contain Side Arm Raise, Standing March, Shallow Squat, Standing Side Bend, and Side Leg Lift. Seated rounds contain Seated torso twist, Seated arm opening, Seated overhead press, and Seated arm reach.
 - After the movement sequence, the quiz is the only main-screen module and presents five randomly selected, non-repeating questions.
 - On the quiz, answer choices are shuffled for every question. Use Up/Down or Left/Right to choose an answer. The correct answer turns green for one second; an incorrect chosen answer turns red before the next question appears.
 - Select **Skip** beside **Start** to move directly to the next movement. Skipping the final movement opens the quiz.
@@ -60,7 +60,7 @@ This non-commercial prototype uses [animal-island-ui](https://github.com/guokaig
 
 ## Pose model setup
 
-The seated catalog in `src/game.ts` contains Seated torso twist, Seated arm opening, and Seated overhead press. Both modes use the same random round ordering, camera preprocessing, inference pipeline, confidence threshold, and cumulative recognition timer. All three seated movements use dedicated models. Standing classifier weights cannot recognize their seated labels.
+The seated catalog in `src/game.ts` contains Seated torso twist, Seated arm opening, Seated overhead press, and Seated arm reach. Both modes use the same random round ordering, camera preprocessing, inference pipeline, confidence threshold, and cumulative recognition timer. Torso twist, arm opening, and overhead press use dedicated models. Arm reach has no classifier and uses a five-second timer. Standing classifier weights cannot recognize their seated labels.
 
 The included models are dedicated two-class **Pose** models exported from Teachable Machine as TensorFlow.js. No training or file copying is required to run the supplied prototype. `CameraPreview.tsx` selects these paths by movement title:
 
@@ -84,9 +84,9 @@ The model labels must match these values exactly:
 
 The seated arm opening labels are `Idle` and `Seated arm opening`. The seated torso twist labels are `Idle` and `Seated torso twist`. The seated overhead press labels are `Idle` and `Seated overhead press`.
 
-To replace a classifier, copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into its movement directory. A shared six-class standing model is also supported: place its files in `public/models/pose/` and remove the standing entries in `modelUrlsByMovement` in `CameraPreview.tsx` so those movements use `defaultModelUrls`. Replacing only `public/models/pose/` changes Standing March, not the other four standing classifiers. Each supported seated movement uses a dedicated model.
+To replace a classifier, copy every exported file, including `model.json`, `metadata.json`, and the referenced `.bin` weights file, into its movement directory. A shared six-class standing model is also supported: place its files in `public/models/pose/` and remove the standing entries in `modelUrlsByMovement` in `CameraPreview.tsx` so those movements use `defaultModelUrls`. Replacing only `public/models/pose/` changes Standing March, not the other four standing classifiers. Each seated classifier uses a dedicated model.
 
-The seated demonstration videos are `public/assets/seated-torso-twist.mp4`, `public/assets/seated-arm-opening.mp4`, and `public/assets/seated-overhead-press.mp4`. The app loads the movement classifiers from local files. `index.html` loads TensorFlow.js before the Teachable Machine browser runtime from `public/vendor/`; Vite does not bundle those legacy runtimes. The runtime can download PoseNet backbone weights from `storage.googleapis.com`, so fully offline recognition is not guaranteed. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
+The seated demonstration videos are `public/assets/seated-torso-twist.mp4`, `public/assets/seated-arm-opening.mp4`, `public/assets/seated-overhead-press.mp4`, and `public/assets/seated-arm-reach.mp4`. The app loads the movement classifiers from local files. `index.html` loads TensorFlow.js before the Teachable Machine browser runtime from `public/vendor/`; Vite does not bundle those legacy runtimes. The runtime can download PoseNet backbone weights from `storage.googleapis.com`, so fully offline recognition is not guaranteed. When the camera or pose recognition is unavailable, the participant can choose to continue the current round with a five-second timer for every remaining movement. Train and test with the intended participants, camera position, lighting, clothing, mobility aids, and left/right movement variations. This prototype is not a medical or rehabilitation assessment tool.
 
 ### Camera preprocessing invariant
 

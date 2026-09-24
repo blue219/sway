@@ -68,7 +68,8 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
-  it('shuffles the three remaining seated movements before the quiz', () => {
+  it('shuffles four seated movements and uses the timer for arm reach', () => {
+    vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
     render(<App />)
 
@@ -79,24 +80,30 @@ describe('Whakakori Together round', () => {
 
     fireEvent.click(choices[1])
     expect(screen.getByRole('heading', { name: 'Seated arm opening' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Movement 1 of 3')).toBeInTheDocument()
+    expect(screen.getByLabelText('Movement 1 of 4')).toBeInTheDocument()
     expect(cameraRenderSpy).toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     expect(screen.getByRole('heading', { name: 'Seated overhead press' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Movement 2 of 3')).toBeInTheDocument()
+    expect(screen.getByLabelText('Movement 2 of 4')).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Movement camera preview' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
+    expect(screen.getByRole('heading', { name: 'Seated arm reach' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Movement 3 of 4')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Pose model pending' })).toHaveTextContent('Model coming soon')
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
+    completeCountdown()
     expect(screen.getByRole('heading', { name: 'Seated torso twist' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Movement 3 of 3')).toBeInTheDocument()
+    expect(screen.getByLabelText('Movement 4 of 4')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
     expect(screen.getByRole('button', { name: /choose seated/i })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Seated overhead press' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Seated arm reach' })).not.toBeInTheDocument()
 
     chooseStanding()
     expect(cameraRenderSpy).toHaveBeenCalled()
