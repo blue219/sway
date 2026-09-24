@@ -21,7 +21,7 @@ export function ResultScreen({ correctAnswers, totalQuestions, points, treeStage
           <h2>Your tree is growing</h2>
         </div>
         <div className="tree-illustration">
-          <img alt={`A ${treeStage.name.toLowerCase()} wellbeing tree`} src="/assets/growing-tree.png" />
+          <img alt={`A ${treeStage.name.toLowerCase()} wellbeing tree`} src="/assets/growing-tree.webp" />
           <p>{treeStage.name}</p>
         </div>
       </Card>

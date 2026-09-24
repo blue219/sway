@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useEffect } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RecognitionStatus } from './components/CameraPreview'
-import { quizQuestions } from './game'
+import { createRandomQuizOrder, quizQuestions } from './game'
 import App from './App'
 
 const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
@@ -90,10 +90,31 @@ afterEach(() => {
   nextMovementRecognised = false
   cameraRenderSpy.mockClear()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   vi.useRealTimers()
 })
 
 describe('Whakakori Together round', () => {
+  it('preloads every image needed for the selected quiz before the first movement', () => {
+    const requestedImages: string[] = []
+    const decode = vi.fn().mockResolvedValue(undefined)
+    class TestImage {
+      set src(value: string) { requestedImages.push(value) }
+      decode = decode
+    }
+    vi.stubGlobal('Image', TestImage)
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    render(<App />)
+    expect(requestedImages).toHaveLength(0)
+
+    chooseStanding()
+
+    const expectedQuizImages = createRandomQuizOrder(quizQuestions.length, () => 0).map((index) => quizQuestions[index].image?.src)
+    expect(requestedImages).toHaveLength(7)
+    expect(requestedImages).toEqual(expect.arrayContaining([...expectedQuizImages, '/assets/quiz-gesture-guide.webp', '/assets/growing-tree.webp']))
+    expect(decode).toHaveBeenCalledTimes(7)
+  })
+
   it('shuffles five seated movements and recognizes arm reach and forward reach', () => {
     vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
@@ -101,7 +122,7 @@ describe('Whakakori Together round', () => {
 
     const choices = screen.getAllByRole('button', { name: /choose (standing|seated)/i })
     expect(choices.map((choice) => choice.querySelector('.mode-card-title')?.textContent)).toEqual(['Standing', 'Seated'])
-    expect(choices.map((choice) => choice.querySelector('img')?.getAttribute('src'))).toEqual(['/assets/selection-standing.png', '/assets/selection-seated.png'])
+    expect(choices.map((choice) => choice.querySelector('img')?.getAttribute('src'))).toEqual(['/assets/selection-standing.webp', '/assets/selection-seated.webp'])
     expect(cameraRenderSpy).not.toHaveBeenCalled()
 
     fireEvent.click(choices[1])
@@ -229,7 +250,7 @@ describe('Whakakori Together round', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     }
 
-    expect(screen.getByRole('img', { name: /raise your left hand/i })).toHaveAttribute('src', '/assets/quiz-gesture-guide.png')
+    expect(screen.getByRole('img', { name: /raise your left hand/i })).toHaveAttribute('src', '/assets/quiz-gesture-guide.webp')
     expect(screen.getByRole('button', { name: 'Choose A gesture' })).toBeDisabled()
     act(() => vi.advanceTimersByTime(2_999))
     expect(screen.getByRole('region', { name: 'Hand choice guide' })).toBeInTheDocument()

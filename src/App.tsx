@@ -16,6 +16,25 @@ type MovementStyle = 'standing' | 'seated'
 const countdownSeconds = requiredMovementDurationMs / 1_000
 const quizIntroCountdownSeconds = 3
 
+function preloadRoundImages(quizOrder: number[]) {
+  const quizImages = quizOrder.flatMap((index) => {
+    const image = quizQuestions[index].image
+    return image ? [image.src] : []
+  })
+  const urls = ['/assets/quiz-gesture-guide.webp', ...quizImages, '/assets/growing-tree.webp']
+
+  return urls.map((src) => {
+    const image = new Image()
+    image.decoding = 'async'
+    image.fetchPriority = 'low'
+    image.src = src
+    if (typeof image.decode === 'function') {
+      void image.decode().catch(() => undefined)
+    }
+    return image
+  })
+}
+
 function App() {
   const [screen, setScreen] = useState<Screen>('selection')
   const [movementStyle, setMovementStyle] = useState<MovementStyle>('standing')
@@ -41,6 +60,7 @@ function App() {
   const movementIndexRef = useRef(0)
   const screenRef = useRef<Screen>('selection')
   const screenHistoryRef = useRef<Screen[]>([])
+  const preloadedImagesRef = useRef<HTMLImageElement[]>([])
 
   const navigateToScreen = useCallback((nextScreen: Screen) => {
     if (screenRef.current === nextScreen) {
@@ -187,6 +207,7 @@ function App() {
   function resetRound() {
     const nextQuizOrder = createRandomQuizOrder(quizQuestions.length)
 
+    preloadedImagesRef.current = []
     movementIndexRef.current = 0
     setMovementIndex(0)
     setMovementStyle('standing')
@@ -215,6 +236,7 @@ function App() {
     const nextMovementOrder = createRandomMovementOrder(selectedMovements.length)
     const nextQuizOrder = createRandomQuizOrder(quizQuestions.length)
 
+    preloadedImagesRef.current = preloadRoundImages(nextQuizOrder)
     movementIndexRef.current = 0
     setMovementStyle(style)
     setMovementIndex(0)

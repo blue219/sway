@@ -32,9 +32,21 @@ afterEach(() => {
 })
 
 describe('QuizCameraPreview', () => {
+  it('starts loading the quiz model while camera permission is pending', async () => {
+    const getUserMedia = vi.fn(() => new Promise<MediaStream>(() => undefined))
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+    const loadModel = vi.fn(() => new Promise<never>(() => undefined))
+    window.tmPose = { load: loadModel }
+
+    render(<QuizCameraPreview isActive onChoice={vi.fn()} questionKey={1} waitForIdle={false} />)
+
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledOnce())
+    await waitFor(() => expect(loadModel).toHaveBeenCalledWith('/models/quiz/model.json', '/models/quiz/metadata.json'))
+  })
   it('loads the quiz model, uses the mirrored 257px crop, and chooses A after a two-second hold', async () => {
     const track = cameraStream()
     const dispose = vi.fn()
+    const disposeClassifier = vi.fn()
     const onChoice = vi.fn()
     const estimatePose = vi.fn().mockResolvedValue({ posenetOutput: {} })
     let frameTime = 0
@@ -56,6 +68,7 @@ describe('QuizCameraPreview', () => {
     vi.stubGlobal('cancelAnimationFrame', vi.fn())
     loadModel.mockResolvedValue({
       dispose,
+      model: { dispose: disposeClassifier },
       estimatePose,
       getClassLabels: () => ['Idle', 'Option A', 'Option B'],
       predict: vi.fn().mockImplementation(() => Promise.resolve([
@@ -102,6 +115,7 @@ describe('QuizCameraPreview', () => {
     unmount()
     expect(track.stop).toHaveBeenCalledOnce()
     expect(dispose).toHaveBeenCalledOnce()
+    expect(disposeClassifier).toHaveBeenCalledOnce()
   })
 
   it('rejects unexpected labels and leaves on-screen choice available', async () => {

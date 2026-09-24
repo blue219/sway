@@ -34,7 +34,7 @@ export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions,
         {guideVisible ? (
           <div className="quiz-guide">
             <div className="quiz-guide-image-wrap">
-              <img alt="Raise your left hand to choose A, or your right hand to choose B." src="/assets/quiz-gesture-guide.png" />
+              <img alt="Raise your left hand to choose A, or your right hand to choose B." src="/assets/quiz-gesture-guide.webp" />
               {isIntroVisible && !isReplayingGuide ? <span aria-label={`${introSecondsRemaining} second${introSecondsRemaining === 1 ? '' : 's'} until quiz`} aria-live="polite" className="quiz-guide-countdown">{introSecondsRemaining}</span> : null}
             </div>
             <p className="quiz-guide-caption">Left hand: A · Right hand: B</p>

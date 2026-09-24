@@ -53,7 +53,7 @@ export function MovementScreen({
     <main className="movement-screen" aria-labelledby="movement-title">
       <section className="movement-action-card">
         <div className="movement-card-heading">
-          <img alt="" className="movement-action-icon" src="/assets/movement-activity-icon.png" />
+          <img alt="" className="movement-action-icon" src="/assets/movement-activity-icon.webp" />
           <div className="movement-introduction">
             <h1 id="movement-title">{movement.title}</h1>
           </div>

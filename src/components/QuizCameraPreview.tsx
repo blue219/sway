@@ -1,6 +1,7 @@
 import type { CustomPoseNet } from '@teachablemachine/pose'
 import { useEffect, useRef, useState } from 'react'
 import { drawInferenceFrame, inferenceFrameSize } from '../cameraFrame'
+import { disposePoseModel } from '../poseModel'
 import { createQuizGestureTracker, type QuizChoice } from '../quizRecognition'
 
 type QuizCameraPreviewProps = {
@@ -23,8 +24,8 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
   const onChoiceRef = useRef(onChoice)
   const [cameraReady, setCameraReady] = useState(false)
   const [modelReady, setModelReady] = useState(false)
-  const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading')
-  const [message, setMessage] = useState('')
+  const [cameraError, setCameraError] = useState('')
+  const [modelError, setModelError] = useState('')
   const [holdMs, setHoldMs] = useState(0)
   const [waitingForIdle, setWaitingForIdle] = useState(waitForIdle)
   onChoiceRef.current = onChoice
@@ -37,12 +38,14 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
     const video = videoRef.current
     if (!video || !isTrackLive()) {
       setCameraReady(false)
-      setStatus('unavailable')
-      setMessage('Camera unavailable. Choose A or B on screen.')
+      setCameraError('Camera unavailable. Choose A or B on screen.')
       return
     }
     const confirmFrame = () => {
-      if (isTrackLive()) setCameraReady(true)
+      if (isTrackLive()) {
+        setCameraReady(true)
+        setCameraError('')
+      }
     }
     if (typeof video.requestVideoFrameCallback === 'function') {
       video.requestVideoFrameCallback(confirmFrame)
@@ -55,8 +58,7 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
     const video = videoRef.current
     const getUserMedia = navigator.mediaDevices?.getUserMedia
     if (!video || !getUserMedia) {
-      setStatus('unavailable')
-      setMessage('Camera unavailable. Choose A or B on screen.')
+      setCameraError('Camera unavailable. Choose A or B on screen.')
       return undefined
     }
 
@@ -65,13 +67,11 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
     let videoTracks: MediaStreamTrack[] = []
     const handleEnded = () => {
       setCameraReady(false)
-      setStatus('unavailable')
-      setMessage('Camera disconnected. Choose A or B on screen.')
+      setCameraError('Camera disconnected. Choose A or B on screen.')
     }
     const handleMute = () => {
       setCameraReady(false)
-      setStatus('unavailable')
-      setMessage('Camera paused. Choose A or B on screen.')
+      setCameraError('Camera paused. Choose A or B on screen.')
     }
     void getUserMedia.call(navigator.mediaDevices, { audio: false, video: { facingMode: 'user' } })
       .then(async (cameraStream) => {
@@ -83,8 +83,7 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
         streamRef.current = cameraStream
         videoTracks = cameraStream.getVideoTracks()
         if (!videoTracks.some((track) => track.readyState === 'live')) {
-          setStatus('unavailable')
-          setMessage('Camera unavailable. Choose A or B on screen.')
+          setCameraError('Camera unavailable. Choose A or B on screen.')
           return
         }
         videoTracks.forEach((track) => {
@@ -96,14 +95,12 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
         try {
           await video.play()
         } catch {
-          setStatus('unavailable')
-          setMessage('Camera unavailable. Choose A or B on screen.')
+          setCameraError('Camera unavailable. Choose A or B on screen.')
         }
       })
       .catch(() => {
         if (current) {
-          setStatus('unavailable')
-          setMessage('Camera permission was not granted. Choose A or B on screen.')
+          setCameraError('Camera permission was not granted. Choose A or B on screen.')
         }
       })
 
@@ -121,47 +118,47 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
   }, [])
 
   useEffect(() => {
-    if (!cameraReady) return undefined
     let current = true
-    setStatus('loading')
+    setModelError('')
     setModelReady(false)
     void Promise.resolve()
       .then(() => {
+        if (!current) return undefined
         if (!window.tmPose) throw new Error('Pose runtime unavailable')
         return window.tmPose.load(modelUrls.model, modelUrls.metadata)
       })
       .then((model) => {
+        if (!model) return
         if (!current) {
-          model.dispose()
+          disposePoseModel(model)
           return
         }
         const labels = model.getClassLabels()
         if (labels.length !== requiredLabels.length || !requiredLabels.every((label) => labels.includes(label))) {
-          model.dispose()
-          setStatus('unavailable')
-          setMessage('Quiz gesture model is invalid. Choose A or B on screen.')
+          disposePoseModel(model)
+          setModelError('Quiz gesture model is invalid. Choose A or B on screen.')
           return
         }
         modelRef.current = model
         setModelReady(true)
-        setStatus('ready')
       })
       .catch(() => {
         if (current) {
-          setStatus('unavailable')
-          setMessage('Quiz gesture model could not load. Choose A or B on screen.')
+          setModelError('Quiz gesture model could not load. Choose A or B on screen.')
         }
       })
 
     return () => {
       current = false
-      modelRef.current?.dispose()
+      if (modelRef.current) disposePoseModel(modelRef.current)
       modelRef.current = null
       setModelReady(false)
     }
-  }, [cameraReady])
+  }, [])
 
-  const canRecognize = isActive && cameraReady && modelReady && status === 'ready'
+  const status = cameraError || modelError ? 'unavailable' : cameraReady && modelReady ? 'ready' : 'loading'
+  const message = cameraError || modelError
+  const canRecognize = isActive && status === 'ready'
   useEffect(() => {
     setHoldMs(0)
     setWaitingForIdle(waitForIdle)
@@ -196,8 +193,7 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
         frameRequest = window.requestAnimationFrame(() => void recognize())
       } catch {
         if (current) {
-          setStatus('unavailable')
-          setMessage('Gesture recognition stopped. Choose A or B on screen.')
+          setModelError('Gesture recognition stopped. Choose A or B on screen.')
         }
       }
     }
@@ -231,8 +227,7 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
         <div className="camera-preview-area">
           <video ref={videoRef} aria-label="Live quiz camera preview" autoPlay muted playsInline onError={() => {
             setCameraReady(false)
-            setStatus('unavailable')
-            setMessage('Camera unavailable. Choose A or B on screen.')
+            setCameraError('Camera unavailable. Choose A or B on screen.')
           }} onPlaying={handlePlaying} />
           <div aria-hidden="true" className="camera-guide" />
         </div>

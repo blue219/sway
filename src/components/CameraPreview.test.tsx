@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CameraPreview } from './CameraPreview'
 
@@ -54,11 +55,35 @@ describe('CameraPreview', () => {
     window.tmPose = { load: mockLoad }
   })
 
+  it('starts loading the movement model while camera permission is pending', async () => {
+    const getUserMedia = vi.fn(() => new Promise<MediaStream>(() => undefined))
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+    mockLoad.mockImplementation(() => new Promise(() => undefined))
+
+    renderPreview(false, 'Standing March')
+
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledOnce())
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledWith('/models/pose/model.json', '/models/pose/metadata.json'))
+  })
+
+  it('does not start a second model request during StrictMode effect replay', async () => {
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: vi.fn(() => new Promise<MediaStream>(() => undefined)) },
+    })
+    mockLoad.mockImplementation(() => new Promise(() => undefined))
+
+    render(<StrictMode><CameraPreview isTracking={false} movementLabel="Standing March" onRecognitionStatusChange={vi.fn()} onComplete={vi.fn()} onActiveDurationChange={vi.fn()} onRecognitionStateChange={vi.fn()} /></StrictMode>)
+
+    await waitFor(() => expect(mockLoad).toHaveBeenCalledOnce())
+  })
+
   it('loads a valid local model after the camera is playing and releases model and camera resources on unmount', async () => {
     const { stream, track } = createCameraStream()
     const dispose = vi.fn()
+    const disposeClassifier = vi.fn()
     const getUserMedia = vi.fn().mockResolvedValue(stream)
-    mockLoad.mockResolvedValue({ dispose, getClassLabels: () => requiredLabels })
+    mockLoad.mockResolvedValue({ dispose, model: { dispose: disposeClassifier }, getClassLabels: () => requiredLabels })
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
     const requestAnimationFrame = vi.fn().mockReturnValue(12)
     const cancelAnimationFrame = vi.fn()
@@ -79,6 +104,7 @@ describe('CameraPreview', () => {
     unmount()
     expect(track.stop).toHaveBeenCalledOnce()
     expect(dispose).toHaveBeenCalledOnce()
+    expect(disposeClassifier).toHaveBeenCalledOnce()
     expect(cancelAnimationFrame).toHaveBeenCalledWith(12)
   })
 

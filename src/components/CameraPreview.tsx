@@ -1,6 +1,7 @@
 import type { CustomPoseNet } from '@teachablemachine/pose'
 import { useEffect, useRef, useState } from 'react'
 import { drawInferenceFrame, inferenceFrameSize } from '../cameraFrame'
+import { disposePoseModel } from '../poseModel'
 import { createMovementTimer, type MovementTimerPhase } from '../poseRecognition'
 
 const defaultModelUrls = {
@@ -100,7 +101,8 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
   const timerRef = useRef<ReturnType<typeof createMovementTimer> | undefined>(undefined)
   const [cameraReady, setCameraReady] = useState(false)
   const [modelReady, setModelReady] = useState(false)
-  const [status, setStatus] = useState<CameraStatus>('loadingCamera')
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>('loadingCamera')
+  const [modelStatus, setModelStatus] = useState<CameraStatus>('loadingModel')
   const [phase, setPhase] = useState<MovementTimerPhase | null>(null)
   const [prediction, setPrediction] = useState<string | null>(null)
 
@@ -112,16 +114,17 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
     const video = videoRef.current
     if (!video || !isVideoTrackLive()) {
       setCameraReady(false)
-      setStatus('unavailable')
+      setCameraStatus('unavailable')
       return
     }
 
     const confirmFrame = () => {
       if (isVideoTrackLive()) {
         setCameraReady(true)
+        setCameraStatus('ready')
       } else {
         setCameraReady(false)
-        setStatus('unavailable')
+        setCameraStatus('unavailable')
       }
     }
     if (typeof video.requestVideoFrameCallback === 'function') {
@@ -137,7 +140,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
     const video = videoRef.current
     const getUserMedia = navigator.mediaDevices?.getUserMedia
     if (!video || !getUserMedia) {
-      setStatus('unavailable')
+      setCameraStatus('unavailable')
       return undefined
     }
 
@@ -155,18 +158,18 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
         streamRef.current = cameraStream
         const videoTracks = cameraStream.getVideoTracks()
         if (!videoTracks.some((track) => track.readyState === 'live')) {
-          setStatus('unavailable')
+          setCameraStatus('unavailable')
           return
         }
 
         videoTracks.forEach((track) => {
           track.addEventListener('ended', () => {
             setCameraReady(false)
-            setStatus('unavailable')
+            setCameraStatus('unavailable')
           })
           track.addEventListener('mute', () => {
             setCameraReady(false)
-            setStatus('loadingCamera')
+            setCameraStatus('loadingCamera')
           })
           track.addEventListener('unmute', handlePreviewPlaying)
         })
@@ -174,12 +177,12 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
         try {
           await video.play()
         } catch {
-          setStatus('unavailable')
+          setCameraStatus('unavailable')
         }
       })
       .catch((error: unknown) => {
         if (!isCurrent) return
-        setStatus(error instanceof DOMException && error.name === 'NotAllowedError' ? 'denied' : 'unavailable')
+        setCameraStatus(error instanceof DOMException && error.name === 'NotAllowedError' ? 'denied' : 'unavailable')
       })
 
     return () => {
@@ -191,49 +194,57 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
   }, [])
 
   useEffect(() => {
-    if (!cameraReady) {
-      return undefined
-    }
-
     let isCurrent = true
     const modelUrls = getModelUrls(movementLabel)
-    setStatus('loadingModel')
+    setModelStatus('loadingModel')
     setModelReady(false)
 
     void Promise.resolve()
       .then(() => {
+        if (!isCurrent) return undefined
         if (!window.tmPose) {
           throw new Error('The local pose runtime is unavailable.')
         }
         return window.tmPose.load(modelUrls.model, modelUrls.metadata)
       })
       .then((model) => {
+        if (!model) return
         if (!isCurrent) {
-          model.dispose()
+          disposePoseModel(model)
           return
         }
         if (!hasRequiredLabels(model.getClassLabels(), movementLabel)) {
-          model.dispose()
-          setStatus('invalidModel')
+          disposePoseModel(model)
+          setModelStatus('invalidModel')
           return
         }
         modelRef.current = model
         setModelReady(true)
-        setStatus('ready')
+        setModelStatus('ready')
       })
       .catch(() => {
         if (isCurrent) {
-          setStatus('modelError')
+          setModelStatus('modelError')
         }
       })
 
     return () => {
       isCurrent = false
-      modelRef.current?.dispose()
+      if (modelRef.current) disposePoseModel(modelRef.current)
       modelRef.current = undefined
       setModelReady(false)
     }
-  }, [cameraReady, movementLabel])
+  }, [movementLabel])
+
+  const status = cameraStatus === 'denied' || cameraStatus === 'unavailable'
+    ? cameraStatus
+    : ['invalidModel', 'modelError', 'recognitionError'].includes(modelStatus)
+      ? modelStatus
+      : !cameraReady
+        ? 'loadingCamera'
+        : !modelReady
+          ? 'loadingModel'
+          : 'ready'
 
   useEffect(() => {
     if (cameraReady && modelReady && status === 'ready') {
@@ -307,7 +318,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
         frameRequest = window.requestAnimationFrame(() => void recognize())
       } catch {
         if (isCurrent) {
-          setStatus('recognitionError')
+          setModelStatus('recognitionError')
         }
       }
     }
@@ -321,7 +332,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
 
   return (
     <div className="camera-preview-area">
-      <video ref={videoRef} aria-label="Live camera preview" autoPlay muted playsInline onError={() => setStatus('unavailable')} onPlaying={handlePreviewPlaying} />
+      <video ref={videoRef} aria-label="Live camera preview" autoPlay muted playsInline onError={() => setCameraStatus('unavailable')} onPlaying={handlePreviewPlaying} />
       <div aria-hidden="true" className="camera-guide" />
     </div>
   )
