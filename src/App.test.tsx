@@ -40,6 +40,15 @@ vi.mock('./components/CameraPreview', () => ({
   },
 }))
 
+vi.mock('./components/QuizCameraPreview', () => ({
+  QuizCameraPreview: ({ isActive, onChoice }: { isActive: boolean; onChoice: (choice: 'A' | 'B') => void }) => (
+    <section aria-label="Quiz camera preview">
+      <button disabled={!isActive} onClick={() => onChoice('A')} type="button">Choose A gesture</button>
+      <button disabled={!isActive} onClick={() => onChoice('B')} type="button">Choose B gesture</button>
+    </section>
+  ),
+}))
+
 function chooseStanding() {
   fireEvent.click(screen.getByRole('button', { name: /choose standing/i }))
 }
@@ -56,6 +65,16 @@ function completeCountdown() {
   for (let second = 0; second < 5; second += 1) {
     act(() => vi.advanceTimersByTime(1_000))
   }
+}
+
+function finishQuizIntro() {
+  expect(screen.getByRole('region', { name: 'Hand choice guide' })).toBeInTheDocument()
+  expect(screen.getByRole('region', { name: 'Quiz camera preview' })).toBeInTheDocument()
+  act(() => vi.advanceTimersByTime(3_000))
+}
+
+function answerButton(answer: string) {
+  return screen.getAllByRole('button').find((button) => button.getAttribute('aria-label')?.endsWith(`: ${answer}`))
 }
 
 afterEach(() => {
@@ -101,6 +120,7 @@ describe('Whakakori Together round', () => {
     expect(screen.getByLabelText('Movement 5 of 5')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
+    finishQuizIntro()
     expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
@@ -120,12 +140,13 @@ describe('Whakakori Together round', () => {
     for (let movement = 0; movement < 5; movement += 1) {
       fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     }
+    finishQuizIntro()
     expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
 
     for (let question = 0; question < 5; question += 1) {
       const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
       const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
-      const correctOption = screen.getAllByRole('radio').find((radio) => radio.closest('label')?.textContent?.includes(correctAnswer ?? ''))
+      const correctOption = answerButton(correctAnswer ?? '')
       expect(correctOption).toBeDefined()
       fireEvent.click(correctOption!)
       act(() => vi.advanceTimersByTime(1_000))
@@ -178,6 +199,7 @@ describe('Whakakori Together round', () => {
   })
 
   it('skips the current movement and opens the quiz after the fifth skip', () => {
+    vi.useFakeTimers()
     render(<App />)
     chooseStanding()
 
@@ -188,7 +210,44 @@ describe('Whakakori Together round', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     }
 
+    finishQuizIntro()
     expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+  })
+
+  it('shows the hand guide for three seconds and can reopen it without accepting a gesture', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    chooseStanding()
+    for (let movement = 0; movement < 5; movement += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    }
+
+    expect(screen.getByRole('img', { name: /raise your left hand/i })).toHaveAttribute('src', '/assets/quiz-gesture-guide.png')
+    expect(screen.getByRole('button', { name: 'Choose A gesture' })).toBeDisabled()
+    act(() => vi.advanceTimersByTime(2_999))
+    expect(screen.getByRole('region', { name: 'Hand choice guide' })).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(1))
+    expect(screen.getByRole('button', { name: 'Choose A gesture' })).toBeEnabled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'View hand guide' }))
+    expect(screen.getByRole('button', { name: 'Choose A gesture' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Close guide' }))
+    expect(screen.getByRole('button', { name: 'Choose A gesture' })).toBeEnabled()
+  })
+
+  it('maps gesture A and B to the currently displayed answers', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    startAndCompleteMovementSequence()
+    finishQuizIntro()
+
+    const optionA = screen.getByRole('button', { name: /^Option A:/ }).getAttribute('aria-label')?.split(': ')[1]
+    fireEvent.click(screen.getByRole('button', { name: 'Choose A gesture' }))
+    expect(screen.getByRole('button', { name: /^Option A:/ })).toHaveClass(optionA === quizQuestions.find((quiz) => quiz.question === screen.getByRole('heading', { level: 1 }).textContent)?.correctAnswer ? 'quiz-option-correct' : 'quiz-option-incorrect')
+    act(() => vi.advanceTimersByTime(1_000))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Choose B gesture' }))
+    expect(screen.getByRole('button', { name: /^Option B:/ })).toBeDisabled()
   })
 
   it('offers a timer fallback when recognition is unavailable and applies it to later movements', () => {
@@ -234,15 +293,16 @@ describe('Whakakori Together round', () => {
     render(<App />)
 
     startAndCompleteMovementSequence()
+    finishQuizIntro()
     const firstQuestion = screen.getByRole('heading', { level: 1 }).textContent
     const correctAnswer = quizQuestions.find((quiz) => quiz.question === firstQuestion)?.correctAnswer
-    const incorrectOption = screen.getAllByRole('radio').find((radio) => !radio.closest('label')?.textContent?.includes(correctAnswer ?? ''))
+    const incorrectOption = screen.getAllByRole('button').find((button) => button.getAttribute('aria-label')?.startsWith('Option ') && !button.getAttribute('aria-label')?.endsWith(`: ${correctAnswer}`))
     expect(incorrectOption).toBeDefined()
     fireEvent.click(incorrectOption!)
 
-    expect(document.querySelector('.quiz-option-feedback-correct')).toBeInTheDocument()
-    expect(document.querySelector('.quiz-option-feedback-incorrect')).toBeInTheDocument()
-    screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled())
+    expect(document.querySelector('.quiz-option-correct')).toBeInTheDocument()
+    expect(document.querySelector('.quiz-option-incorrect')).toBeInTheDocument()
+    screen.getAllByRole('button', { name: /Option [AB]:/ }).forEach((button) => expect(button).toBeDisabled())
 
     act(() => vi.advanceTimersByTime(1_000))
 
@@ -255,17 +315,18 @@ describe('Whakakori Together round', () => {
     render(<App />)
 
     startAndCompleteMovementSequence()
+    finishQuizIntro()
 
     const answeredQuestions = new Set<string>()
     for (let question = 0; question < 5; question += 1) {
       const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
       answeredQuestions.add(questionText)
       const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
-      const correctOption = screen.getByText(correctAnswer ?? '', { exact: false }).closest('label')?.querySelector('input')
+      const correctOption = answerButton(correctAnswer ?? '')
 
-      expect(correctOption).not.toBeNull()
+      expect(correctOption).toBeDefined()
       fireEvent.click(correctOption!)
-      expect(document.querySelector('.quiz-option-feedback-correct')).toBeInTheDocument()
+      expect(document.querySelector('.quiz-option-correct')).toBeInTheDocument()
       act(() => vi.advanceTimersByTime(1_000))
     }
 

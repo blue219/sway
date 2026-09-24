@@ -1,12 +1,12 @@
 import type { CustomPoseNet } from '@teachablemachine/pose'
 import { useEffect, useRef, useState } from 'react'
+import { drawInferenceFrame, inferenceFrameSize } from '../cameraFrame'
 import { createMovementTimer, type MovementTimerPhase } from '../poseRecognition'
 
 const defaultModelUrls = {
   model: '/models/pose/model.json',
   metadata: '/models/pose/metadata.json',
 }
-const inferenceFrameSize = 257
 
 const modelUrlsByMovement: Record<string, typeof defaultModelUrls> = {
   'Side Arm Raise': {
@@ -74,25 +74,6 @@ function hasRequiredLabels(labels: string[], movementLabel: string) {
 
 function getModelUrls(movementLabel: string) {
   return modelUrlsByMovement[movementLabel] ?? defaultModelUrls
-}
-
-function drawInferenceFrame(video: HTMLVideoElement, canvas: HTMLCanvasElement) {
-  const context = canvas.getContext('2d')
-  if (!context || video.videoWidth === 0 || video.videoHeight === 0) {
-    return false
-  }
-
-  // Match Teachable Machine's mirrored square webcam input so model coordinates stay consistent.
-  const sourceSize = Math.min(video.videoWidth, video.videoHeight)
-  const sourceX = (video.videoWidth - sourceSize) / 2
-  const sourceY = (video.videoHeight - sourceSize) / 2
-  context.save()
-  context.clearRect(0, 0, inferenceFrameSize, inferenceFrameSize)
-  context.translate(inferenceFrameSize, 0)
-  context.scale(-1, 1)
-  context.drawImage(video, sourceX, sourceY, sourceSize, sourceSize, 0, 0, inferenceFrameSize, inferenceFrameSize)
-  context.restore()
-  return true
 }
 
 function getUnavailableMessage(status: CameraStatus) {

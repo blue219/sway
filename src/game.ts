@@ -11,7 +11,7 @@ export type Movement = {
 
 export type QuizQuestion = {
   question: string
-  options: string[]
+  options: [string, string]
   correctAnswer: string
   image?: {
     alt: string
@@ -112,102 +112,33 @@ export function getTreeStage(points: number): TreeStage {
 
 export const quizQuestions: QuizQuestion[] = [
   {
-    question: 'What bird is shown?',
-    options: ['Kiwi', 'Tūī', 'Kererū', 'Fantail'],
-    correctAnswer: 'Tūī',
-    image: {
-      alt: 'A tūī perched on a branch',
-      src: '/assets/tui.png',
-    },
+    question: 'What colour are pōhutukawa flowers?',
+    options: ['Red', 'Blue'],
+    correctAnswer: 'Red',
+    image: { alt: 'A pōhutukawa branch with red flowers', src: '/assets/quiz-pohutukawa.svg' },
   },
   {
-    question: 'What does whānau describe?',
-    options: ['A traditional meal', 'An extended family group', 'A meeting house', 'A native bird'],
-    correctAnswer: 'An extended family group',
+    question: 'What kind of bird is a kākāpō?',
+    options: ['Parrot', 'Penguin'],
+    correctAnswer: 'Parrot',
+    image: { alt: 'A green kākāpō in the forest', src: '/assets/quiz-kakapo.svg' },
   },
   {
-    question: 'What is a marae?',
-    options: ['A type of canoe', 'A Māori community gathering place', 'A mountain trail', 'A woven cloak'],
-    correctAnswer: 'A Māori community gathering place',
+    question: 'What plant inspires the koru shape?',
+    options: ['Fern', 'Palm'],
+    correctAnswer: 'Fern',
+    image: { alt: 'An unfurling fern frond', src: '/assets/quiz-koru.svg' },
   },
   {
-    question: 'What is a hongi?',
-    options: ['A song of farewell', 'A greeting that presses noses', 'A carved ancestor figure', 'A shared meal'],
-    correctAnswer: 'A greeting that presses noses',
+    question: 'What is harakeke often used for?',
+    options: ['Weaving', 'Pottery'],
+    correctAnswer: 'Weaving',
+    image: { alt: 'Harakeke leaves beside a woven basket', src: '/assets/quiz-harakeke.svg' },
   },
   {
-    question: 'Which te reo Māori phrase is widely used as a greeting?',
-    options: ['Ka kite anō', 'Kia ora', 'Haere rā', 'Tēnā koutou'],
-    correctAnswer: 'Kia ora',
-  },
-  {
-    question: 'Which traditional cooking method is shown?',
-    options: ['Hīkoi', 'Hāngī', 'Hui', 'Waiata'],
-    correctAnswer: 'Hāngī',
-    image: {
-      alt: 'A hāngī earth oven with food baskets and heated stones',
-      src: '/assets/quiz-hangi.png',
-    },
-  },
-  {
-    question: 'What is the main meeting house of a marae called?',
-    options: ['Wharekai', 'Wharenui', 'Marae ātea', 'Waka'],
-    correctAnswer: 'Wharenui',
-    image: {
-      alt: 'A traditional Māori wharenui meeting house',
-      src: '/assets/quiz-wharenui.png',
-    },
-  },
-  {
-    question: 'What is this traditional Māori canoe called?',
-    options: ['Whare', 'Waka', 'Pounamu', 'Kōwhaiwhai'],
-    correctAnswer: 'Waka',
-    image: {
-      alt: 'A traditional Māori waka canoe',
-      src: '/assets/quiz-waka.png',
-    },
-  },
-  {
-    question: 'What is this painted scroll ornamentation called?',
-    options: ['Whakairo', 'Kōwhaiwhai', 'Pōwhiri', 'Koha'],
-    correctAnswer: 'Kōwhaiwhai',
-    image: {
-      alt: 'Kōwhaiwhai painted scroll ornamentation on a wooden beam',
-      src: '/assets/quiz-kowhaiwhai.png',
-    },
-  },
-  {
-    question: 'What is the traditional Māori name for this prized greenstone?',
-    options: ['Kōwhai', 'Pounamu', 'Pātaka', 'Wero'],
-    correctAnswer: 'Pounamu',
-    image: {
-      alt: 'An uncarved piece of green pounamu stone',
-      src: '/assets/quiz-pounamu.png',
-    },
-  },
-  {
-    question: 'What is a hui?',
-    options: ['A canoe', 'A meeting or gathering', 'An earth oven', 'A song'],
-    correctAnswer: 'A meeting or gathering',
-  },
-  {
-    question: 'What does aroha express?',
-    options: ['A challenge', 'Compassion, empathy, or love', 'A farewell', 'A meeting house'],
-    correctAnswer: 'Compassion, empathy, or love',
-  },
-  {
-    question: 'What is a pōwhiri?',
-    options: ['A ceremony of mourning', 'A process for welcoming visitors', 'A type of carving', 'A woven cloak'],
-    correctAnswer: 'A process for welcoming visitors',
-  },
-  {
-    question: 'What is a waiata?',
-    options: ['A speech', 'A chant or song', 'A traditional canoe', 'A greenstone'],
-    correctAnswer: 'A chant or song',
-  },
-  {
-    question: 'What does kaitiaki mean?',
-    options: ['A visitor', 'A custodian or guardian', 'A feast', 'A carved house'],
-    correctAnswer: 'A custodian or guardian',
+    question: 'How many red stars are on the New Zealand flag?',
+    options: ['Four', 'Five'],
+    correctAnswer: 'Four',
+    image: { alt: 'The New Zealand flag with four red stars', src: '/assets/quiz-flag.svg' },
   },
 ]

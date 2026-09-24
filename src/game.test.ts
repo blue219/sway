@@ -52,8 +52,13 @@ describe('round rewards', () => {
     expect(options).toEqual(['A', 'B', 'C', 'D'])
   })
 
-  it('includes 15 Māori culture questions with six illustrations', () => {
-    expect(quizQuestions).toHaveLength(15)
-    expect(quizQuestions.filter((question) => question.image)).toHaveLength(6)
+  it('includes five new illustrated questions with two distinct answers each', () => {
+    expect(quizQuestions).toHaveLength(5)
+    expect(quizQuestions.every((question) =>
+      question.options.length === 2 &&
+      new Set(question.options).size === 2 &&
+      question.options.includes(question.correctAnswer) &&
+      question.image?.src.endsWith('.svg'),
+    )).toBe(true)
   })
 })

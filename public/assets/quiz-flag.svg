@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="New Zealand flag">
+  <rect width="640" height="420" rx="36" fill="#e9f4fc"/>
+  <path d="M103 380V57" stroke="#8d6745" stroke-width="16" stroke-linecap="round"/>
+  <path d="M111 66c138-26 269 20 419-8v238c-145 28-289-19-419 8z" fill="#12316e" stroke="#0b2456" stroke-width="8"/>
+  <path d="M112 67c68-13 132-10 197-1v116c-66-11-130-12-197 1z" fill="#fff"/>
+  <path d="M112 73c67 25 132 71 197 105m0-109c-69 31-131 80-197 113" stroke="#c63547" stroke-width="13"/>
+  <path d="M210 61v124M111 121h199" stroke="#fff" stroke-width="28"/>
+  <path d="M210 61v124M111 121h199" stroke="#c63547" stroke-width="14"/>
+  <g fill="#c63547" stroke="#fff" stroke-width="7">
+    <path d="m411 98 8 20 22 1-18 14 6 21-18-12-19 12 7-21-18-14 22-1z"/>
+    <path d="m476 162 8 20 22 1-18 14 6 21-18-12-19 12 7-21-18-14 22-1z"/>
+    <path d="m391 226 8 20 22 1-18 14 6 21-18-12-19 12 7-21-18-14 22-1z"/>
+    <path d="m482 261 8 20 22 1-18 14 6 21-18-12-19 12 7-21-18-14 22-1z"/>
+  </g>
+</svg>

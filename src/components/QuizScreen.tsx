@@ -1,5 +1,8 @@
-import { Card, Radio } from 'animal-island-ui'
+import { Button } from 'animal-island-ui'
+import { useState } from 'react'
 import type { QuizQuestion } from '../game'
+import type { QuizChoice } from '../quizRecognition'
+import { QuizCameraPreview } from './QuizCameraPreview'
 
 type QuizScreenProps = {
   answerOrder: string[]
@@ -8,43 +11,78 @@ type QuizScreenProps = {
   totalQuestions: number
   selectedAnswer: string | null
   isShowingAnswer: boolean
+  isIntroVisible: boolean
   onAnswer: (answer: string) => void
 }
 
-export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions, selectedAnswer, isShowingAnswer, onAnswer }: QuizScreenProps) {
+export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions, selectedAnswer, isShowingAnswer, isIntroVisible, onAnswer }: QuizScreenProps) {
+  const [isReplayingGuide, setIsReplayingGuide] = useState(false)
+  const [hasReplayedGuide, setHasReplayedGuide] = useState(false)
+  const guideVisible = isIntroVisible || isReplayingGuide
+  const isGestureActive = !guideVisible && !isShowingAnswer
+
+  function answerWithGesture(choice: QuizChoice) {
+    if (isGestureActive) {
+      onAnswer(answerOrder[choice === 'A' ? 0 : 1])
+    }
+  }
+
   return (
-    <main className="screen quiz-screen">
-      <Card className={`quiz-panel${quiz.image ? '' : ' quiz-panel-text-only'}`} color="app-teal" pattern="app-teal" aria-labelledby="quiz-title">
-        {quiz.image ? (
-          <div className="quiz-image-wrap">
-            <img alt={quiz.image.alt} src={quiz.image.src} />
+    <main aria-label="Quiz" className="movement-screen quiz-round-screen">
+      <section aria-label={guideVisible ? 'Hand choice guide' : 'Quiz question'} className="movement-action-card quiz-action-card">
+        {guideVisible ? (
+          <div className="quiz-guide">
+            <img alt="Raise your left hand to choose A, or your right hand to choose B." src="/assets/quiz-gesture-guide.png" />
+            <p className="quiz-guide-caption">Left hand: A · Right hand: B</p>
+            {isReplayingGuide ? <Button className="quiz-guide-close" htmlType="button" size="large" onClick={() => setIsReplayingGuide(false)}>Close guide</Button> : null}
           </div>
-        ) : null}
-        <div className="quiz-content">
-          <p className="quiz-progress">Question {currentQuestion} of {totalQuestions}</p>
-          <h1 id="quiz-title">{quiz.question}</h1>
-          <Radio
-            className="quiz-options"
-            disabled={isShowingAnswer}
-            direction="vertical"
-            key={currentQuestion}
-            onChange={(answer) => onAnswer(String(answer))}
-            options={answerOrder.map((option, index) => ({
-              label: (
-                <span className={`quiz-option-feedback${isShowingAnswer && option === quiz.correctAnswer ? ' quiz-option-feedback-correct' : ''}${isShowingAnswer && option === selectedAnswer && option !== quiz.correctAnswer ? ' quiz-option-feedback-incorrect' : ''}`}>
-                  <span className="quiz-option-letter">{String.fromCharCode(65 + index)}.</span> {option}
-                </span>
-              ),
-              value: option,
-            }))}
-            size="large"
-            value={selectedAnswer ?? ''}
-          />
-          <p aria-live="polite" className="quiz-feedback-message">
-            {isShowingAnswer ? `Correct answer: ${quiz.correctAnswer}` : ''}
-          </p>
-        </div>
-      </Card>
+        ) : (
+          <>
+            <div className="quiz-question-heading">
+              <span className="movement-index">Question {currentQuestion} of {totalQuestions}</span>
+              <Button htmlType="button" size="large" onClick={() => {
+                setHasReplayedGuide(true)
+                setIsReplayingGuide(true)
+              }}>View hand guide</Button>
+            </div>
+            <div className="quiz-question-body">
+              <img alt={quiz.image?.alt ?? ''} className="quiz-illustration" src={quiz.image?.src} />
+              <h1 id="quiz-title">{quiz.question}</h1>
+              <div aria-labelledby="quiz-title" className="quiz-answer-options" role="group">
+                {answerOrder.map((answer, index) => {
+                  const letter = index === 0 ? 'A' : 'B'
+                  const feedback = isShowingAnswer && answer === quiz.correctAnswer
+                    ? ' quiz-option-correct'
+                    : isShowingAnswer && answer === selectedAnswer
+                      ? ' quiz-option-incorrect'
+                      : ''
+                  return (
+                    <button
+                      aria-label={`Option ${letter}: ${answer}`}
+                      className={`quiz-answer-button${feedback}`}
+                      disabled={isShowingAnswer}
+                      type="button"
+                      key={answer}
+                      onClick={() => onAnswer(answer)}
+                    >
+                      <strong>{letter}</strong><span>{answer}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p aria-live="polite" className="quiz-feedback-message">
+                {isShowingAnswer ? `Correct answer: ${quiz.correctAnswer}` : ''}
+              </p>
+            </div>
+          </>
+        )}
+      </section>
+      <QuizCameraPreview
+        isActive={isGestureActive}
+        onChoice={answerWithGesture}
+        questionKey={currentQuestion}
+        waitForIdle={currentQuestion > 1 || hasReplayedGuide}
+      />
     </main>
   )
 }

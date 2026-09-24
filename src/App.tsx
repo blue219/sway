@@ -22,6 +22,7 @@ function App() {
   const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.length))
   const [quizOrder, setQuizOrder] = useState(() => createRandomQuizOrder(quizQuestions.length))
   const [quizQuestionIndex, setQuizQuestionIndex] = useState(0)
+  const [quizIntroVisible, setQuizIntroVisible] = useState(false)
   const [answerOrder, setAnswerOrder] = useState(() => createRandomAnswerOrder(quizQuestions[quizOrder[0]].options))
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isShowingAnswer, setIsShowingAnswer] = useState(false)
@@ -66,6 +67,7 @@ function App() {
     }
 
     if (currentScreen === 'quiz' && previousScreen === 'movement') {
+      setQuizIntroVisible(false)
       const currentQuiz = quizQuestions[quizOrder[quizQuestionIndex]]
       if (isShowingAnswer && selectedAnswer === currentQuiz.correctAnswer) {
         setCorrectAnswers((count) => Math.max(0, count - 1))
@@ -78,6 +80,12 @@ function App() {
       setPlayRequest((request) => request + 1)
     }
   }, [isShowingAnswer, quizOrder, quizQuestionIndex, selectedAnswer])
+
+  useEffect(() => {
+    if (screen !== 'quiz' || !quizIntroVisible) return undefined
+    const guideTimer = window.setTimeout(() => setQuizIntroVisible(false), 3_000)
+    return () => window.clearTimeout(guideTimer)
+  }, [screen, quizIntroVisible])
 
   useEffect(() => {
     if (!isShowingAnswer) {
@@ -109,6 +117,7 @@ function App() {
     const currentMovementIndex = movementIndexRef.current
     if (currentMovementIndex === activeMovements.length - 1) {
       setMovementPhase('idle')
+      setQuizIntroVisible(true)
       navigateToScreen('quiz')
       return
     }
@@ -175,6 +184,7 @@ function App() {
     setMovementOrder(createRandomMovementOrder(movements.length))
     setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
+    setQuizIntroVisible(false)
     setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
     setSelectedAnswer(null)
     setIsShowingAnswer(false)
@@ -201,6 +211,7 @@ function App() {
     setMovementOrder(nextMovementOrder)
     setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
+    setQuizIntroVisible(false)
     setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
     setSelectedAnswer(null)
     setIsShowingAnswer(false)
@@ -256,7 +267,7 @@ function App() {
   }
 
   function answerQuiz(answer: string) {
-    if (isShowingAnswer) {
+    if (screenRef.current !== 'quiz' || quizIntroVisible || isShowingAnswer) {
       return
     }
 
@@ -272,7 +283,6 @@ function App() {
   const activeQuiz = quizQuestions[quizOrder[quizQuestionIndex]]
   const roundPreview = screen === 'movement' ? (
     <div className="round-preview quiz-header-preview">
-      <img alt="A tūī bird, the quiz subject" src="/assets/tui.png" />
       <div>
         <span>Coming up</span>
         <strong>Quiz after {activeMovements.length} {activeMovements.length === 1 ? 'movement' : 'movements'}</strong>
@@ -316,7 +326,7 @@ function App() {
             onStart={startMovement}
           />
         ) : null}
-        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
+        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} isIntroVisible={quizIntroVisible} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
         {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalQuestions={questionsPerRound} treeStage={treeStage} onFinish={resetRound} onPlayAgain={resetRound} /> : null}
         <Modal
           className="recognition-fallback-modal"

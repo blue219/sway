@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Harakeke and woven basket">
+  <rect width="640" height="420" rx="36" fill="#eaf7f2"/>
+  <path d="M145 343C86 235 104 149 131 58c22 100 47 180 88 285M160 346c-28-113-4-205 38-290 3 102 14 191 39 290M180 348c22-119 70-206 134-281-28 110-58 198-69 281M162 350C90 290 62 220 50 133c64 71 109 138 170 217" fill="#5ba968" stroke="#337b51" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M322 213h225l-26 156H348z" fill="#d6a76b" stroke="#926941" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M327 245h214M335 285h201M343 325h186M376 218l-10 146m54-147-2 149m50-149 7 149m46-149 10 146" fill="none" stroke="#946e45" stroke-width="11" opacity=".8"/>
+  <path d="M351 213c2-89 165-89 167 0" fill="none" stroke="#926941" stroke-width="15"/>
+  <path d="M55 364h530" stroke="#79bb8f" stroke-width="17" stroke-linecap="round"/>
+</svg>
