@@ -1,5 +1,4 @@
 import { Button, Card, Progress } from 'animal-island-ui'
-import type { ReactNode } from 'react'
 import type { TreeStage } from '../game'
 
 type AppHeaderProps = {
@@ -9,10 +8,9 @@ type AppHeaderProps = {
   onOpenRecords: () => void
   points: number
   treeStage: TreeStage
-  roundPreview?: ReactNode
 }
 
-export function AppHeader({ canGoBack, onGoBack, onGoHome, onOpenRecords, points, treeStage, roundPreview }: AppHeaderProps) {
+export function AppHeader({ canGoBack, onGoBack, onGoHome, onOpenRecords, points, treeStage }: AppHeaderProps) {
   const progress = Math.min(100, (points / 250) * 100)
 
   return (
@@ -28,17 +26,16 @@ export function AppHeader({ canGoBack, onGoBack, onGoHome, onOpenRecords, points
           <span>Whakakori Together</span>
         </button>
       </div>
-      {roundPreview ? <div className="header-round-preview">{roundPreview}</div> : null}
-      <button className="header-records-link" type="button" onClick={onOpenRecords}>Records</button>
       <div className="header-status" aria-label={`${points} Wellbeing Points, ${treeStage.name}`}>
-        <Card className="status-card" color="app-yellow">
-          <span className="status-label">Wellbeing Points</span>
-          <strong>{points}</strong>
-        </Card>
         <Card className="status-card tree-status" color="app-teal">
           <span className="status-label">{treeStage.name}</span>
           <Progress aria-label={`Tree growth: ${treeStage.name}`} percent={progress} showInfo={false} size="small" />
         </Card>
+        <Card className="status-card" color="app-yellow">
+          <span className="status-label">Points</span>
+          <strong>{points}</strong>
+        </Card>
+        <button className="header-records-link" type="button" onClick={onOpenRecords}>Records</button>
       </div>
     </header>
   )

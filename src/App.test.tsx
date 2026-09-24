@@ -109,6 +109,16 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
+  it('keeps the header focused on the tree, points, and records', () => {
+    render(<App />)
+    const headerStatus = screen.getByRole('banner').querySelector('.header-status')
+    expect(Array.from(headerStatus?.children ?? []).map((element) => element.textContent)).toEqual(['Sapling', 'Points0', 'Records'])
+
+    chooseStanding()
+    expect(screen.queryByText('Coming up')).not.toBeInTheDocument()
+    expect(screen.queryByText('Quiz after 5 movements')).not.toBeInTheDocument()
+  })
+
   it('preloads every image needed for the selected quiz before the first movement', () => {
     const requestedImages: string[] = []
     const decode = vi.fn().mockResolvedValue(undefined)
@@ -163,7 +173,7 @@ describe('Whakakori Together round', () => {
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     finishQuizIntro()
-    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+    expect(screen.getByText('Question 1 of 5')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
     expect(screen.getByRole('button', { name: /choose seated/i })).toBeInTheDocument()
@@ -183,7 +193,7 @@ describe('Whakakori Together round', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     }
     finishQuizIntro()
-    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+    expect(screen.getByText('Question 1 of 5')).toBeInTheDocument()
 
     for (let question = 0; question < 5; question += 1) {
       const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
@@ -249,7 +259,7 @@ describe('Whakakori Together round', () => {
     }
 
     finishQuizIntro()
-    expect(screen.getAllByText('Question 1 of 5')).toHaveLength(2)
+    expect(screen.getByText('Question 1 of 5')).toBeInTheDocument()
   })
 
   it('shows the hand guide for three seconds and can reopen it without accepting a gesture', () => {
@@ -348,7 +358,7 @@ describe('Whakakori Together round', () => {
 
     act(() => vi.advanceTimersByTime(1_000))
 
-    expect(screen.getAllByText('Question 2 of 5')).toHaveLength(2)
+    expect(screen.getByText('Question 2 of 5')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(firstQuestion)
   })
 

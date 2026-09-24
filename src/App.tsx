@@ -353,20 +353,6 @@ function App() {
 
   const treeStage = getTreeStage(totalPoints)
   const activeQuiz = quizQuestions[quizOrder[quizQuestionIndex]]
-  const roundPreview = screen === 'movement' ? (
-    <div className="round-preview quiz-header-preview">
-      <div>
-        <span>Coming up</span>
-        <strong>Quiz after {activeMovements.length} {activeMovements.length === 1 ? 'movement' : 'movements'}</strong>
-      </div>
-    </div>
-  ) : screen === 'quiz' ? (
-    <div className="round-preview movement-header-preview">
-      <span>Question {quizQuestionIndex + 1} of {questionsPerRound}</span>
-      <strong>Choose your answer</strong>
-    </div>
-  ) : undefined
-
   return (
     <Cursor>
       <div className="app-shell">
@@ -376,7 +362,6 @@ function App() {
           onGoHome={resetRound}
           onOpenRecords={() => setHistoryOpen(true)}
           points={totalPoints}
-          roundPreview={roundPreview}
           treeStage={treeStage}
         />
         {historyState.error ? <p className="storage-notice" role="status">{historyState.error}</p> : null}
