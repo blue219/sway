@@ -29,11 +29,12 @@ For focused round and recognition checks, run `pnpm exec vitest run src/App.test
 - `src/game.ts`: movement and quiz content, randomisation, scoring, and tree stages.
 - `src/scoreHistory.ts`: local score record loading, validation, saving, and clearing.
 - `src/poseRecognition.ts` and `src/quizRecognition.ts`: confidence threshold, cumulative recognition timers, and quiz gesture choice.
+- `src/usePoseCamera.ts` and `src/usePoseModel.ts`: shared camera-track and pose-model loading, status, and cleanup for both previews.
+- `src/cameraFrame.ts`: the shared mirrored, centred 257 × 257 inference input.
 - `src/components/`: header, movement-style selection, movement, camera, quiz, and result presentation.
 - `src/styles.css`: responsive styling layered over `animal-island-ui/style`.
 - `src/**/*.test.ts(x)` and `src/test/setup.ts`: Vitest and Testing Library regression coverage.
 - `public/assets/`, `public/models/`, `public/vendor/`: served media, movement classifiers, and legacy browser runtimes.
-- `Movement Game Prototype.docx`: original design reference; this README describes the implemented behaviour.
 
 ## Interaction and accessibility
 
@@ -66,7 +67,7 @@ This non-commercial prototype uses [animal-island-ui](https://github.com/guokaig
 
 The seated catalog in `src/game.ts` contains Seated torso twist, Seated arm opening, Seated overhead press, Seated arm reach, and Seated Forward Reach. Both modes use the same random round ordering, camera preprocessing, inference pipeline, confidence threshold, and cumulative recognition timer. Each seated movement uses a dedicated model. Standing classifier weights cannot recognize their seated labels.
 
-The included movement models are dedicated two-class **Pose** models exported from Teachable Machine as TensorFlow.js. No training or file copying is required to run the supplied prototype. `CameraPreview.tsx` selects these paths by movement title:
+The included movement models are dedicated two-class **Pose** models exported from Teachable Machine as TensorFlow.js. No training or file copying is required to run the supplied prototype. `CameraPreview.tsx` selects these paths by movement title; `usePoseModel.ts` handles loading, label validation, and disposal for movement and quiz previews:
 
 - `public/models/pose/`: `Neutral` and `Standing March`
 - `public/models/side-arm-raise/`: `Neutral` and `Side Arm Raise`
@@ -98,7 +99,7 @@ The seated demonstration videos are `public/assets/seated-torso-twist.mp4`, `pub
 
 ### Camera preprocessing invariant
 
-Pose inference must receive the same input geometry used by the Teachable Machine webcam workflow. Before calling `estimatePose`, both movement and quiz previews draw each camera frame into a reusable 257 × 257 canvas using a centred square crop and horizontal mirroring, then pass that canvas to the model.
+Pose inference must receive the same input geometry used by the Teachable Machine webcam workflow. Before calling `estimatePose`, both movement and quiz previews use `cameraFrame.ts` to draw each camera frame into a reusable 257 × 257 canvas using a centred square crop and horizontal mirroring, then pass that canvas to the model. Both previews use `usePoseCamera.ts` to stop camera tracks and remove track listeners when they close.
 
 Do not replace this canvas with the raw `<video>` element. The preview's CSS `transform: scaleX(-1)` changes only what the participant sees; it does not mirror the pixels used for inference. In `@teachablemachine/pose` 0.8.6, passing `true` to `estimatePose(video, true)` flips the returned keypoint coordinates but does not flip the `posenetOutput` consumed by the classifier. Passing the raw rectangular video therefore makes production inference differ from Teachable Machine testing and can cause a neutral standing pose to be classified as the target movement, which incorrectly advances the hold timer.
 

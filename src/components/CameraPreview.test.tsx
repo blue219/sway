@@ -10,6 +10,7 @@ const requiredLabels = ['Neutral', 'Side Arm Raise', 'Standing March', 'Shallow 
 function createCameraStream() {
   const track = {
     addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     enabled: true,
     label: 'Test camera',
     muted: false,
@@ -103,6 +104,7 @@ describe('CameraPreview', () => {
 
     unmount()
     expect(track.stop).toHaveBeenCalledOnce()
+    expect(track.removeEventListener).toHaveBeenCalledTimes(3)
     expect(dispose).toHaveBeenCalledOnce()
     expect(disposeClassifier).toHaveBeenCalledOnce()
     expect(cancelAnimationFrame).toHaveBeenCalledWith(12)

@@ -1,8 +1,8 @@
-import type { CustomPoseNet } from '@teachablemachine/pose'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { drawInferenceFrame, inferenceFrameSize } from '../cameraFrame'
-import { disposePoseModel } from '../poseModel'
+import { usePoseCamera } from '../usePoseCamera'
 import { createMovementTimer, type MovementTimerPhase } from '../poseRecognition'
+import { usePoseModel } from '../usePoseModel'
 
 const defaultModelUrls = {
   model: '/models/pose/model.json',
@@ -96,152 +96,22 @@ function getUnavailableMessage(status: CameraStatus) {
 }
 
 export function CameraPreview({ isTracking, isPaused = false, movementLabel, onRecognitionStatusChange, onComplete, onActiveDurationChange, onRecognitionStateChange }: CameraPreviewProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | undefined>(undefined)
-  const modelRef = useRef<CustomPoseNet | undefined>(undefined)
+  const { videoRef, status: cameraStatus, handlePlaying, onVideoError } = usePoseCamera()
+  const modelUrls = getModelUrls(movementLabel)
+  const validateLabels = useCallback((labels: string[]) => hasRequiredLabels(labels, movementLabel), [movementLabel])
+  const { modelRef, status: modelStatus } = usePoseModel(modelUrls.model, modelUrls.metadata, validateLabels)
   const timerRef = useRef<ReturnType<typeof createMovementTimer> | undefined>(undefined)
   const timerLabelRef = useRef<string | undefined>(undefined)
-  const [cameraReady, setCameraReady] = useState(false)
-  const [modelReady, setModelReady] = useState(false)
-  const [cameraStatus, setCameraStatus] = useState<CameraStatus>('loadingCamera')
-  const [modelStatus, setModelStatus] = useState<CameraStatus>('loadingModel')
+  const [recognitionError, setRecognitionError] = useState(false)
   const [phase, setPhase] = useState<MovementTimerPhase | null>(null)
   const [prediction, setPrediction] = useState<string | null>(null)
-
-  function isVideoTrackLive() {
-    return streamRef.current?.getVideoTracks().some((track) => track.readyState === 'live' && track.enabled && !track.muted) ?? false
-  }
-
-  function handlePreviewPlaying() {
-    const video = videoRef.current
-    if (!video || !isVideoTrackLive()) {
-      setCameraReady(false)
-      setCameraStatus('unavailable')
-      return
-    }
-
-    const confirmFrame = () => {
-      if (isVideoTrackLive()) {
-        setCameraReady(true)
-        setCameraStatus('ready')
-      } else {
-        setCameraReady(false)
-        setCameraStatus('unavailable')
-      }
-    }
-    if (typeof video.requestVideoFrameCallback === 'function') {
-      video.requestVideoFrameCallback(confirmFrame)
-      return
-    }
-
-    // Older browsers do not expose frame callbacks; the playing event is their best available signal.
-    confirmFrame()
-  }
-
-  useEffect(() => {
-    const video = videoRef.current
-    const getUserMedia = navigator.mediaDevices?.getUserMedia
-    if (!video || !getUserMedia) {
-      setCameraStatus('unavailable')
-      return undefined
-    }
-
-    let isCurrent = true
-    let stream: MediaStream | undefined
-
-    void getUserMedia.call(navigator.mediaDevices, { audio: false, video: { facingMode: 'user' } })
-      .then(async (cameraStream) => {
-        stream = cameraStream
-        if (!isCurrent) {
-          cameraStream.getTracks().forEach((track) => track.stop())
-          return
-        }
-
-        streamRef.current = cameraStream
-        const videoTracks = cameraStream.getVideoTracks()
-        if (!videoTracks.some((track) => track.readyState === 'live')) {
-          setCameraStatus('unavailable')
-          return
-        }
-
-        videoTracks.forEach((track) => {
-          track.addEventListener('ended', () => {
-            setCameraReady(false)
-            setCameraStatus('unavailable')
-          })
-          track.addEventListener('mute', () => {
-            setCameraReady(false)
-            setCameraStatus('loadingCamera')
-          })
-          track.addEventListener('unmute', handlePreviewPlaying)
-        })
-        video.srcObject = cameraStream
-        try {
-          await video.play()
-        } catch {
-          setCameraStatus('unavailable')
-        }
-      })
-      .catch((error: unknown) => {
-        if (!isCurrent) return
-        setCameraStatus(error instanceof DOMException && error.name === 'NotAllowedError' ? 'denied' : 'unavailable')
-      })
-
-    return () => {
-      isCurrent = false
-      video.srcObject = null
-      streamRef.current = undefined
-      stream?.getTracks().forEach((track) => track.stop())
-    }
-  }, [])
-
-  useEffect(() => {
-    let isCurrent = true
-    const modelUrls = getModelUrls(movementLabel)
-    setModelStatus('loadingModel')
-    setModelReady(false)
-
-    void Promise.resolve()
-      .then(() => {
-        if (!isCurrent) return undefined
-        if (!window.tmPose) {
-          throw new Error('The local pose runtime is unavailable.')
-        }
-        return window.tmPose.load(modelUrls.model, modelUrls.metadata)
-      })
-      .then((model) => {
-        if (!model) return
-        if (!isCurrent) {
-          disposePoseModel(model)
-          return
-        }
-        if (!hasRequiredLabels(model.getClassLabels(), movementLabel)) {
-          disposePoseModel(model)
-          setModelStatus('invalidModel')
-          return
-        }
-        modelRef.current = model
-        setModelReady(true)
-        setModelStatus('ready')
-      })
-      .catch(() => {
-        if (isCurrent) {
-          setModelStatus('modelError')
-        }
-      })
-
-    return () => {
-      isCurrent = false
-      if (modelRef.current) disposePoseModel(modelRef.current)
-      modelRef.current = undefined
-      setModelReady(false)
-    }
-  }, [movementLabel])
-
-  const status = cameraStatus === 'denied' || cameraStatus === 'unavailable'
-    ? cameraStatus
-    : ['invalidModel', 'modelError', 'recognitionError'].includes(modelStatus)
-      ? modelStatus
+  const cameraReady = cameraStatus === 'ready'
+  const modelReady = modelStatus === 'ready'
+  const status: CameraStatus = cameraStatus === 'denied' ? 'denied'
+    : cameraStatus === 'unavailable' || cameraStatus === 'disconnected' ? 'unavailable'
+    : modelStatus === 'invalid' ? 'invalidModel'
+    : modelStatus === 'error' ? 'modelError'
+    : recognitionError ? 'recognitionError'
       : !cameraReady
         ? 'loadingCamera'
         : !modelReady
@@ -326,7 +196,7 @@ export function CameraPreview({ isTracking, isPaused = false, movementLabel, onR
         frameRequest = window.requestAnimationFrame(() => void recognize())
       } catch {
         if (isCurrent) {
-          setModelStatus('recognitionError')
+          setRecognitionError(true)
         }
       }
     }
@@ -340,7 +210,7 @@ export function CameraPreview({ isTracking, isPaused = false, movementLabel, onR
 
   return (
     <div className="camera-preview-area">
-      <video ref={videoRef} aria-label="Live camera preview" autoPlay muted playsInline onError={() => setCameraStatus('unavailable')} onPlaying={handlePreviewPlaying} />
+      <video ref={videoRef} aria-label="Live camera preview" autoPlay muted playsInline onError={onVideoError} onPlaying={handlePlaying} />
       <div aria-hidden="true" className="camera-guide" />
     </div>
   )

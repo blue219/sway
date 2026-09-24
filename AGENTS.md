@@ -1,8 +1,8 @@
 ## Repository description
-Whakakori Together is a frontend-only, non-commercial movement and quiz prototype for older adults. See README.md for current behaviour and model setup; Movement Game Prototype.docx is the original design reference.
+Whakakori Together is a frontend-only, non-commercial movement and quiz prototype for older adults. See README.md for current behaviour and model setup.
 
 ## Goal
-Preserve the five-movement round, five-question quiz, and session-only wellbeing reward while keeping the facilitator-supported experience simple and accessible.
+Preserve the five-movement round, five-question quiz, and locally saved wellbeing score history while keeping the facilitator-supported experience simple and accessible.
 
 ## Local Startup
 - Run `pnpm install`, then `pnpm dev`.
@@ -20,6 +20,8 @@ Preserve the five-movement round, five-question quiz, and session-only wellbeing
 - `src/App.tsx`: round orchestration and fallback timer.
 - `src/game.ts`: content, randomisation, scoring, and tree stages.
 - `src/poseRecognition.ts`: cumulative recognition timer.
+- `src/usePoseCamera.ts` and `src/usePoseModel.ts`: shared camera and model lifecycle.
+- `src/cameraFrame.ts`: shared mirrored inference input.
 - `src/components/`: screen and camera components.
 - `public/`: media, model exports, and vendored browser runtimes.
 - Tests live beside the source; shared setup is in `src/test/`.
