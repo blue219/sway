@@ -70,7 +70,14 @@ function completeCountdown() {
 function finishQuizIntro() {
   expect(screen.getByRole('region', { name: 'Hand choice guide' })).toBeInTheDocument()
   expect(screen.getByRole('region', { name: 'Quiz camera preview' })).toBeInTheDocument()
-  act(() => vi.advanceTimersByTime(3_000))
+  expect(screen.getByLabelText('3 seconds until quiz')).toBeInTheDocument()
+  act(() => vi.advanceTimersByTime(1_000))
+  expect(screen.getByLabelText('2 seconds until quiz')).toBeInTheDocument()
+  act(() => vi.advanceTimersByTime(1_000))
+  expect(screen.getByLabelText('1 second until quiz')).toBeInTheDocument()
+  act(() => vi.advanceTimersByTime(1_000))
+  expect(screen.queryByRole('region', { name: 'Hand choice guide' })).not.toBeInTheDocument()
+  expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
 }
 
 function answerButton(answer: string) {

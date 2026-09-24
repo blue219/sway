@@ -77,6 +77,12 @@ describe('QuizCameraPreview', () => {
     fireEvent.playing(video)
     await waitFor(() => expect(loadModel).toHaveBeenCalledWith('/models/quiz/model.json', '/models/quiz/metadata.json'))
     await waitFor(() => expect(frameCallback).toBeDefined())
+    expect(screen.queryByText('Raise your left hand for A or right hand for B.')).not.toBeInTheDocument()
+    const cameraCard = screen.getByRole('region', { name: 'Quiz camera preview' })
+    expect(cameraCard).toHaveClass('movement-camera-card')
+    expect(cameraCard.querySelector('.movement-camera-heading')).toBeInTheDocument()
+    expect(cameraCard.querySelector('.camera-preview-panel .camera-preview-area > video')).toBe(video)
+    expect(cameraCard.querySelector('.quiz-camera-status, .quiz-camera-overlay, progress')).toBeNull()
 
     for (frameTime = 0; frameTime <= 2_600; frameTime += 100) {
       await act(async () => {
@@ -86,6 +92,7 @@ describe('QuizCameraPreview', () => {
 
     expect(onChoice).toHaveBeenCalledOnce()
     expect(onChoice).toHaveBeenCalledWith('A')
+    expect(screen.getByText('2.0/2 S')).toBeInTheDocument()
     const inferenceFrame = estimatePose.mock.calls[0][0]
     expect(inferenceFrame).toMatchObject({ width: 257, height: 257 })
     expect(context.translate).toHaveBeenCalledWith(257, 0)

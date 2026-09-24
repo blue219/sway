@@ -1,7 +1,7 @@
 import type { CustomPoseNet } from '@teachablemachine/pose'
 import { useEffect, useRef, useState } from 'react'
 import { drawInferenceFrame, inferenceFrameSize } from '../cameraFrame'
-import { createQuizGestureTracker, requiredQuizHoldMs, type QuizChoice } from '../quizRecognition'
+import { createQuizGestureTracker, type QuizChoice } from '../quizRecognition'
 
 type QuizCameraPreviewProps = {
   isActive: boolean
@@ -216,13 +216,16 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
         ? 'Hand choices pause while the guide or answer is shown.'
         : waitingForIdle
           ? 'Lower your hand to choose again.'
-          : 'Raise your left hand for A or right hand for B.'
+          : ''
 
   return (
-    <section aria-label="Quiz camera preview" className="movement-camera-card quiz-camera-card">
-      <div className="quiz-camera-heading">
-        <h2>Choose with your hand</h2>
-        <div aria-live="polite" className="quiz-hold">Hold <strong>{(holdMs / 1_000).toFixed(1)}/2 s</strong></div>
+    <section aria-label="Quiz camera preview" className="movement-camera-card">
+      <div className="movement-camera-heading">
+        <div aria-live="polite" className="movement-progress">
+          {canRecognize && isActive ? <span aria-label={holdMs > 0 ? 'Gesture recognised' : 'Gesture not recognised'} className={`movement-recognition-indicator${holdMs > 0 ? ' movement-recognition-indicator-success' : ''}`}>{holdMs > 0 ? '✓' : '×'}</span> : null}
+          <span>Hold</span>
+          <strong>{(holdMs / 1_000).toFixed(1)}/2 S</strong>
+        </div>
       </div>
       <div className="camera-preview-panel">
         <div className="camera-preview-area">
@@ -232,11 +235,9 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
             setMessage('Camera unavailable. Choose A or B on screen.')
           }} onPlaying={handlePlaying} />
           <div aria-hidden="true" className="camera-guide" />
-          {status !== 'ready' ? <div className="quiz-camera-overlay">{status === 'loading' ? 'Starting camera…' : 'Use the A or B buttons'}</div> : null}
         </div>
       </div>
-      <p aria-live="polite" className="quiz-camera-status">{statusText}</p>
-      <progress aria-label="Gesture hold progress" max={requiredQuizHoldMs} value={holdMs} />
+      <span aria-live="polite" className="screen-reader-only">{statusText}</span>
     </section>
   )
 }

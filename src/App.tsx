@@ -14,6 +14,7 @@ type MovementPhase = 'idle' | 'waitingForRecognition' | 'recognizing' | 'countdo
 type MovementStyle = 'standing' | 'seated'
 
 const countdownSeconds = requiredMovementDurationMs / 1_000
+const quizIntroCountdownSeconds = 3
 
 function App() {
   const [screen, setScreen] = useState<Screen>('selection')
@@ -23,6 +24,7 @@ function App() {
   const [quizOrder, setQuizOrder] = useState(() => createRandomQuizOrder(quizQuestions.length))
   const [quizQuestionIndex, setQuizQuestionIndex] = useState(0)
   const [quizIntroVisible, setQuizIntroVisible] = useState(false)
+  const [quizIntroSecondsRemaining, setQuizIntroSecondsRemaining] = useState(quizIntroCountdownSeconds)
   const [answerOrder, setAnswerOrder] = useState(() => createRandomAnswerOrder(quizQuestions[quizOrder[0]].options))
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isShowingAnswer, setIsShowingAnswer] = useState(false)
@@ -84,7 +86,13 @@ function App() {
   useEffect(() => {
     if (screen !== 'quiz' || !quizIntroVisible) return undefined
     const guideTimer = window.setTimeout(() => setQuizIntroVisible(false), 3_000)
-    return () => window.clearTimeout(guideTimer)
+    const countdownTimer = window.setInterval(() => {
+      setQuizIntroSecondsRemaining((seconds) => Math.max(1, seconds - 1))
+    }, 1_000)
+    return () => {
+      window.clearTimeout(guideTimer)
+      window.clearInterval(countdownTimer)
+    }
   }, [screen, quizIntroVisible])
 
   useEffect(() => {
@@ -117,6 +125,7 @@ function App() {
     const currentMovementIndex = movementIndexRef.current
     if (currentMovementIndex === activeMovements.length - 1) {
       setMovementPhase('idle')
+      setQuizIntroSecondsRemaining(quizIntroCountdownSeconds)
       setQuizIntroVisible(true)
       navigateToScreen('quiz')
       return
@@ -184,6 +193,7 @@ function App() {
     setMovementOrder(createRandomMovementOrder(movements.length))
     setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
+    setQuizIntroSecondsRemaining(quizIntroCountdownSeconds)
     setQuizIntroVisible(false)
     setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
     setSelectedAnswer(null)
@@ -211,6 +221,7 @@ function App() {
     setMovementOrder(nextMovementOrder)
     setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
+    setQuizIntroSecondsRemaining(quizIntroCountdownSeconds)
     setQuizIntroVisible(false)
     setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
     setSelectedAnswer(null)
@@ -326,7 +337,7 @@ function App() {
             onStart={startMovement}
           />
         ) : null}
-        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} isIntroVisible={quizIntroVisible} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
+        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} introSecondsRemaining={quizIntroSecondsRemaining} isIntroVisible={quizIntroVisible} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
         {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalQuestions={questionsPerRound} treeStage={treeStage} onFinish={resetRound} onPlayAgain={resetRound} /> : null}
         <Modal
           className="recognition-fallback-modal"

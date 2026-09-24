@@ -10,12 +10,13 @@ type QuizScreenProps = {
   currentQuestion: number
   totalQuestions: number
   selectedAnswer: string | null
+  introSecondsRemaining: number
   isShowingAnswer: boolean
   isIntroVisible: boolean
   onAnswer: (answer: string) => void
 }
 
-export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions, selectedAnswer, isShowingAnswer, isIntroVisible, onAnswer }: QuizScreenProps) {
+export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions, selectedAnswer, introSecondsRemaining, isShowingAnswer, isIntroVisible, onAnswer }: QuizScreenProps) {
   const [isReplayingGuide, setIsReplayingGuide] = useState(false)
   const [hasReplayedGuide, setHasReplayedGuide] = useState(false)
   const guideVisible = isIntroVisible || isReplayingGuide
@@ -32,7 +33,10 @@ export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions,
       <section aria-label={guideVisible ? 'Hand choice guide' : 'Quiz question'} className="movement-action-card quiz-action-card">
         {guideVisible ? (
           <div className="quiz-guide">
-            <img alt="Raise your left hand to choose A, or your right hand to choose B." src="/assets/quiz-gesture-guide.png" />
+            <div className="quiz-guide-image-wrap">
+              <img alt="Raise your left hand to choose A, or your right hand to choose B." src="/assets/quiz-gesture-guide.png" />
+              {isIntroVisible && !isReplayingGuide ? <span aria-label={`${introSecondsRemaining} second${introSecondsRemaining === 1 ? '' : 's'} until quiz`} aria-live="polite" className="quiz-guide-countdown">{introSecondsRemaining}</span> : null}
+            </div>
             <p className="quiz-guide-caption">Left hand: A · Right hand: B</p>
             {isReplayingGuide ? <Button className="quiz-guide-close" htmlType="button" size="large" onClick={() => setIsReplayingGuide(false)}>Close guide</Button> : null}
           </div>
