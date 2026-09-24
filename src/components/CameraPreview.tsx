@@ -58,6 +58,7 @@ export type RecognitionStatus =
 
 type CameraPreviewProps = {
   isTracking: boolean
+  isPaused?: boolean
   movementLabel: string
   onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
   onComplete: () => void
@@ -94,11 +95,12 @@ function getUnavailableMessage(status: CameraStatus) {
   }
 }
 
-export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusChange, onComplete, onActiveDurationChange, onRecognitionStateChange }: CameraPreviewProps) {
+export function CameraPreview({ isTracking, isPaused = false, movementLabel, onRecognitionStatusChange, onComplete, onActiveDurationChange, onRecognitionStateChange }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | undefined>(undefined)
   const modelRef = useRef<CustomPoseNet | undefined>(undefined)
   const timerRef = useRef<ReturnType<typeof createMovementTimer> | undefined>(undefined)
+  const timerLabelRef = useRef<string | undefined>(undefined)
   const [cameraReady, setCameraReady] = useState(false)
   const [modelReady, setModelReady] = useState(false)
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('loadingCamera')
@@ -263,21 +265,24 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
   const isAvailable = cameraReady && modelReady && status === 'ready'
 
   useEffect(() => {
-    if (!isTracking || !isAvailable) {
+    if (!isTracking || !isAvailable || isPaused) {
       onRecognitionStateChange(null)
       return
     }
 
     onRecognitionStateChange(phase === 'tracking' && prediction === movementLabel)
-  }, [isAvailable, isTracking, movementLabel, onRecognitionStateChange, phase, prediction])
+  }, [isAvailable, isPaused, isTracking, movementLabel, onRecognitionStateChange, phase, prediction])
 
   useEffect(() => {
     if (!isTracking || !isAvailable) {
       timerRef.current = undefined
+      timerLabelRef.current = undefined
       setPhase(null)
       setPrediction(null)
       return undefined
     }
+
+    if (isPaused) return undefined
 
     const video = videoRef.current
     const model = modelRef.current
@@ -290,9 +295,12 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
     const inferenceCanvas = document.createElement('canvas')
     inferenceCanvas.width = inferenceFrameSize
     inferenceCanvas.height = inferenceFrameSize
-    timerRef.current = createMovementTimer(movementLabel)
-    setPhase('waitingForMovement')
-    onActiveDurationChange(0)
+    if (!timerRef.current || timerLabelRef.current !== movementLabel) {
+      timerRef.current = createMovementTimer(movementLabel)
+      timerLabelRef.current = movementLabel
+      setPhase('waitingForMovement')
+      onActiveDurationChange(0)
+    }
 
     const recognize = async () => {
       if (!isCurrent) return
@@ -328,7 +336,7 @@ export function CameraPreview({ isTracking, movementLabel, onRecognitionStatusCh
       isCurrent = false
       window.cancelAnimationFrame(frameRequest)
     }
-  }, [isAvailable, isTracking, movementLabel, onActiveDurationChange, onComplete])
+  }, [isAvailable, isPaused, isTracking, movementLabel, onActiveDurationChange, onComplete])
 
   return (
     <div className="camera-preview-area">

@@ -13,10 +13,11 @@ type QuizScreenProps = {
   introSecondsRemaining: number
   isShowingAnswer: boolean
   isIntroVisible: boolean
+  isPaused: boolean
   onAnswer: (answer: string) => void
 }
 
-export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions, selectedAnswer, introSecondsRemaining, isShowingAnswer, isIntroVisible, onAnswer }: QuizScreenProps) {
+export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions, selectedAnswer, introSecondsRemaining, isShowingAnswer, isIntroVisible, isPaused, onAnswer }: QuizScreenProps) {
   const [isReplayingGuide, setIsReplayingGuide] = useState(false)
   const [hasReplayedGuide, setHasReplayedGuide] = useState(false)
   const guideVisible = isIntroVisible || isReplayingGuide
@@ -38,13 +39,13 @@ export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions,
               {isIntroVisible && !isReplayingGuide ? <span aria-label={`${introSecondsRemaining} second${introSecondsRemaining === 1 ? '' : 's'} until quiz`} aria-live="polite" className="quiz-guide-countdown">{introSecondsRemaining}</span> : null}
             </div>
             <p className="quiz-guide-caption">Left hand: A · Right hand: B</p>
-            {isReplayingGuide ? <Button className="quiz-guide-close" htmlType="button" size="large" onClick={() => setIsReplayingGuide(false)}>Close guide</Button> : null}
+            {isReplayingGuide ? <Button className="quiz-guide-close" disabled={isPaused} htmlType="button" size="large" onClick={() => setIsReplayingGuide(false)}>Close guide</Button> : null}
           </div>
         ) : (
           <>
             <div className="quiz-question-heading">
               <span className="movement-index">Question {currentQuestion} of {totalQuestions}</span>
-              <Button htmlType="button" size="large" onClick={() => {
+              <Button disabled={isPaused} htmlType="button" size="large" onClick={() => {
                 setHasReplayedGuide(true)
                 setIsReplayingGuide(true)
               }}>View hand guide</Button>
@@ -64,7 +65,7 @@ export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions,
                     <button
                       aria-label={`Option ${letter}: ${answer}`}
                       className={`quiz-answer-button${feedback}`}
-                      disabled={isShowingAnswer}
+                      disabled={isShowingAnswer || isPaused}
                       type="button"
                       key={answer}
                       onClick={() => onAnswer(answer)}
@@ -83,6 +84,7 @@ export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions,
       </section>
       <QuizCameraPreview
         isActive={isGestureActive}
+        isPaused={isPaused}
         onChoice={answerWithGesture}
         questionKey={currentQuestion}
         waitForIdle={currentQuestion > 1 || hasReplayedGuide}

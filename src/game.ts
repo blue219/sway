@@ -1,6 +1,7 @@
 export type TreeStage = {
-  name: 'Seed' | 'Sprout' | 'Young Tree' | 'Growing Tree' | 'Flourishing Tree'
+  name: 'Sapling' | 'Tree' | 'Large Tree'
   minimumPoints: number
+  imageSrc: string
 }
 
 export type Movement = {
@@ -92,11 +93,9 @@ export function createRandomAnswerOrder(options: string[], random = Math.random)
 }
 
 export const treeStages: TreeStage[] = [
-  { name: 'Seed', minimumPoints: 0 },
-  { name: 'Sprout', minimumPoints: 1 },
-  { name: 'Young Tree', minimumPoints: 11 },
-  { name: 'Growing Tree', minimumPoints: 21 },
-  { name: 'Flourishing Tree', minimumPoints: 31 },
+  { name: 'Sapling', minimumPoints: 0, imageSrc: '/assets/tree-sapling.webp' },
+  { name: 'Tree', minimumPoints: 100, imageSrc: '/assets/tree-medium.webp' },
+  { name: 'Large Tree', minimumPoints: 250, imageSrc: '/assets/tree-large.webp' },
 ]
 
 export function scoreQuiz(correctAnswers: number): number {

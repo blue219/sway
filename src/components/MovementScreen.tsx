@@ -10,6 +10,7 @@ type MovementScreenProps = {
   currentMovement: number
   isCountingDown: boolean
   isTracking: boolean
+  isPaused: boolean
   isWaitingForRecognition: boolean
   movement: Movement
   usePoseRecognition: boolean
@@ -28,6 +29,7 @@ export function MovementScreen({
   currentMovement,
   isCountingDown,
   isTracking,
+  isPaused,
   isWaitingForRecognition,
   movement,
   usePoseRecognition,
@@ -61,10 +63,10 @@ export function MovementScreen({
             <span aria-label={`Movement ${currentMovement} of ${totalMovements}`} className="movement-index">
               {currentMovement}/{totalMovements}
             </span>
-            <Button className="start-movement-button" disabled={isTracking || isWaitingForRecognition || isCountingDown} htmlType="button" size="large" type="primary" onClick={onStart}>
+            <Button className="start-movement-button" disabled={isPaused || isTracking || isWaitingForRecognition || isCountingDown} htmlType="button" size="large" type="primary" onClick={onStart}>
               Start
             </Button>
-            <Button className="skip-movement-button" htmlType="button" size="large" type="default" onClick={onSkip}>
+            <Button className="skip-movement-button" disabled={isPaused} htmlType="button" size="large" type="default" onClick={onSkip}>
               Skip
             </Button>
           </div>
@@ -94,6 +96,7 @@ export function MovementScreen({
           {usePoseRecognition ? (
             <CameraPreview
               isTracking={isTracking}
+              isPaused={isPaused}
               movementLabel={movement.title}
               onComplete={onRecognitionComplete}
               onRecognitionStateChange={setIsMovementRecognised}

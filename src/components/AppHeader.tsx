@@ -1,19 +1,19 @@
 import { Button, Card, Progress } from 'animal-island-ui'
 import type { ReactNode } from 'react'
-import { treeStages, type TreeStage } from '../game'
+import type { TreeStage } from '../game'
 
 type AppHeaderProps = {
   canGoBack: boolean
   onGoBack: () => void
   onGoHome: () => void
+  onOpenRecords: () => void
   points: number
   treeStage: TreeStage
   roundPreview?: ReactNode
 }
 
-export function AppHeader({ canGoBack, onGoBack, onGoHome, points, treeStage, roundPreview }: AppHeaderProps) {
-  const currentStage = treeStages.findIndex((stage) => stage.name === treeStage.name)
-  const progress = (currentStage / (treeStages.length - 1)) * 100
+export function AppHeader({ canGoBack, onGoBack, onGoHome, onOpenRecords, points, treeStage, roundPreview }: AppHeaderProps) {
+  const progress = Math.min(100, (points / 250) * 100)
 
   return (
     <header className="app-header">
@@ -29,6 +29,7 @@ export function AppHeader({ canGoBack, onGoBack, onGoHome, points, treeStage, ro
         </button>
       </div>
       {roundPreview ? <div className="header-round-preview">{roundPreview}</div> : null}
+      <button className="header-records-link" type="button" onClick={onOpenRecords}>Records</button>
       <div className="header-status" aria-label={`${points} Wellbeing Points, ${treeStage.name}`}>
         <Card className="status-card" color="app-yellow">
           <span className="status-label">Wellbeing Points</span>

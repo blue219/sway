@@ -6,8 +6,10 @@ import { MovementScreen } from './components/MovementScreen'
 import { ModeSelectionScreen } from './components/ModeSelectionScreen'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
-import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements } from './game'
+import { ScoreRecordList } from './components/ScoreRecordList'
+import { createRandomAnswerOrder, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements, treeStages } from './game'
 import { requiredMovementDurationMs } from './poseRecognition'
+import { clearScoreHistory, loadScoreHistory, saveScoreHistory, totalScore } from './scoreHistory'
 
 type Screen = 'selection' | 'movement' | 'quiz' | 'result'
 type MovementPhase = 'idle' | 'waitingForRecognition' | 'recognizing' | 'countdown'
@@ -21,7 +23,7 @@ function preloadRoundImages(quizOrder: number[]) {
     const image = quizQuestions[index].image
     return image ? [image.src] : []
   })
-  const urls = ['/assets/quiz-gesture-guide.webp', ...quizImages, '/assets/growing-tree.webp']
+  const urls = ['/assets/quiz-gesture-guide.webp', ...quizImages, ...treeStages.map((stage) => stage.imageSrc)]
 
   return urls.map((src) => {
     const image = new Image()
@@ -55,12 +57,18 @@ function App() {
   const [playRequest, setPlayRequest] = useState(0)
   const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [secondsRemaining, setSecondsRemaining] = useState(countdownSeconds)
+  const [historyState, setHistoryState] = useState(loadScoreHistory)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const points = screen === 'result' ? scoreQuiz(correctAnswers) : 0
+  const totalPoints = totalScore(historyState.records)
   const activeMovements = movementStyle === 'seated' ? seatedMovements : movements
   const movementIndexRef = useRef(0)
   const screenRef = useRef<Screen>('selection')
   const screenHistoryRef = useRef<Screen[]>([])
   const preloadedImagesRef = useRef<HTMLImageElement[]>([])
+  const historyRef = useRef(historyState.records)
+  const savedRoundRef = useRef(false)
+  const quizIntroRemainingRef = useRef(quizIntroCountdownSeconds)
 
   const navigateToScreen = useCallback((nextScreen: Screen) => {
     if (screenRef.current === nextScreen) {
@@ -72,7 +80,11 @@ function App() {
     setScreen(nextScreen)
   }, [])
 
-  const goBack = useCallback(() => {
+  function goBack() {
+    if (screenRef.current === 'result') {
+      resetRound()
+      return
+    }
     const previousScreen = screenHistoryRef.current.pop()
     if (!previousScreen) {
       return
@@ -101,27 +113,38 @@ function App() {
       setFallbackPromptReason(null)
       setPlayRequest((request) => request + 1)
     }
-  }, [isShowingAnswer, quizOrder, quizQuestionIndex, selectedAnswer])
+  }
 
   useEffect(() => {
-    if (screen !== 'quiz' || !quizIntroVisible) return undefined
-    const guideTimer = window.setTimeout(() => setQuizIntroVisible(false), 3_000)
-    const countdownTimer = window.setInterval(() => {
-      setQuizIntroSecondsRemaining((seconds) => Math.max(1, seconds - 1))
+    if (screen !== 'quiz' || !quizIntroVisible || historyOpen) return undefined
+    const timer = window.setInterval(() => {
+      if (quizIntroRemainingRef.current <= 1) {
+        setQuizIntroVisible(false)
+      } else {
+        quizIntroRemainingRef.current -= 1
+        setQuizIntroSecondsRemaining(quizIntroRemainingRef.current)
+      }
     }, 1_000)
-    return () => {
-      window.clearTimeout(guideTimer)
-      window.clearInterval(countdownTimer)
-    }
-  }, [screen, quizIntroVisible])
+    return () => window.clearInterval(timer)
+  }, [screen, quizIntroVisible, historyOpen])
 
   useEffect(() => {
-    if (!isShowingAnswer) {
+    if (!isShowingAnswer || historyOpen) {
       return undefined
     }
 
     const answerTimer = window.setTimeout(() => {
       if (quizQuestionIndex === questionsPerRound - 1) {
+        if (!savedRoundRef.current) {
+          savedRoundRef.current = true
+          const records = [...historyRef.current, {
+            completedAt: new Date().toISOString(),
+            correctAnswers,
+            points: scoreQuiz(correctAnswers),
+          }]
+          historyRef.current = records
+          setHistoryState({ records, error: saveScoreHistory(records) ? null : 'Scores could not be saved on this device.' })
+        }
         navigateToScreen('result')
         return
       }
@@ -134,7 +157,7 @@ function App() {
     }, 1_000)
 
     return () => window.clearTimeout(answerTimer)
-  }, [isShowingAnswer, navigateToScreen, quizQuestionIndex, quizOrder])
+  }, [correctAnswers, historyOpen, isShowingAnswer, navigateToScreen, quizQuestionIndex, quizOrder])
 
   const beginCountdown = useCallback(() => {
     setMovementPhase('countdown')
@@ -145,6 +168,7 @@ function App() {
     const currentMovementIndex = movementIndexRef.current
     if (currentMovementIndex === activeMovements.length - 1) {
       setMovementPhase('idle')
+      quizIntroRemainingRef.current = quizIntroCountdownSeconds
       setQuizIntroSecondsRemaining(quizIntroCountdownSeconds)
       setQuizIntroVisible(true)
       navigateToScreen('quiz')
@@ -171,7 +195,7 @@ function App() {
   }, [activeMovements, beginCountdown, fallbackTimerEnabled, movementOrder, navigateToScreen])
 
   useEffect(() => {
-    if (movementPhase !== 'countdown') {
+    if (movementPhase !== 'countdown' || historyOpen) {
       return undefined
     }
 
@@ -185,7 +209,7 @@ function App() {
     }, 1_000)
 
     return () => window.clearTimeout(timer)
-  }, [advanceMovement, movementPhase, secondsRemaining])
+  }, [advanceMovement, historyOpen, movementPhase, secondsRemaining])
 
   useEffect(() => {
     if (movementPhase === 'waitingForRecognition' && recognitionStatus.kind === 'ready') {
@@ -215,6 +239,7 @@ function App() {
     setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
     setQuizIntroSecondsRemaining(quizIntroCountdownSeconds)
+    quizIntroRemainingRef.current = quizIntroCountdownSeconds
     setQuizIntroVisible(false)
     setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
     setSelectedAnswer(null)
@@ -226,6 +251,8 @@ function App() {
     setPlayRequest(0)
     setActiveDurationMs(0)
     setSecondsRemaining(countdownSeconds)
+    savedRoundRef.current = false
+    setHistoryOpen(false)
     screenHistoryRef.current = []
     screenRef.current = 'selection'
     setScreen('selection')
@@ -244,6 +271,7 @@ function App() {
     setQuizOrder(nextQuizOrder)
     setQuizQuestionIndex(0)
     setQuizIntroSecondsRemaining(quizIntroCountdownSeconds)
+    quizIntroRemainingRef.current = quizIntroCountdownSeconds
     setQuizIntroVisible(false)
     setAnswerOrder(createRandomAnswerOrder(quizQuestions[nextQuizOrder[0]].options))
     setSelectedAnswer(null)
@@ -255,6 +283,7 @@ function App() {
     setPlayRequest(0)
     setActiveDurationMs(0)
     setSecondsRemaining(countdownSeconds)
+    savedRoundRef.current = false
     navigateToScreen('movement')
   }
 
@@ -300,7 +329,7 @@ function App() {
   }
 
   function answerQuiz(answer: string) {
-    if (screenRef.current !== 'quiz' || quizIntroVisible || isShowingAnswer) {
+    if (screenRef.current !== 'quiz' || quizIntroVisible || isShowingAnswer || historyOpen) {
       return
     }
 
@@ -312,7 +341,17 @@ function App() {
     }
   }
 
-  const treeStage = getTreeStage(points)
+  function clearRecords() {
+    if (!window.confirm('Clear all saved score records? This cannot be undone.')) return
+    if (!clearScoreHistory()) {
+      setHistoryState((current) => ({ ...current, error: 'Saved scores could not be cleared.' }))
+      return
+    }
+    historyRef.current = []
+    setHistoryState({ records: [], error: null })
+  }
+
+  const treeStage = getTreeStage(totalPoints)
   const activeQuiz = quizQuestions[quizOrder[quizQuestionIndex]]
   const roundPreview = screen === 'movement' ? (
     <div className="round-preview quiz-header-preview">
@@ -335,16 +374,19 @@ function App() {
           canGoBack={screenHistoryRef.current.length > 0}
           onGoBack={goBack}
           onGoHome={resetRound}
-          points={points}
+          onOpenRecords={() => setHistoryOpen(true)}
+          points={totalPoints}
           roundPreview={roundPreview}
           treeStage={treeStage}
         />
+        {historyState.error ? <p className="storage-notice" role="status">{historyState.error}</p> : null}
         {screen === 'selection' ? <ModeSelectionScreen onChooseStanding={() => startRound('standing')} onChooseSeated={() => startRound('seated')} /> : null}
         {screen === 'movement' ? (
           <MovementScreen
             currentMovement={movementIndex + 1}
             isCountingDown={movementPhase === 'countdown'}
             isTracking={movementPhase === 'recognizing'}
+            isPaused={historyOpen}
             isWaitingForRecognition={movementPhase === 'waitingForRecognition'}
             movement={activeMovements[movementOrder[movementIndex]]}
             usePoseRecognition={activeMovements[movementOrder[movementIndex]].usePoseRecognition !== false}
@@ -359,8 +401,20 @@ function App() {
             onStart={startMovement}
           />
         ) : null}
-        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} introSecondsRemaining={quizIntroSecondsRemaining} isIntroVisible={quizIntroVisible} isShowingAnswer={isShowingAnswer} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
-        {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalQuestions={questionsPerRound} treeStage={treeStage} onFinish={resetRound} onPlayAgain={resetRound} /> : null}
+        {screen === 'quiz' ? <QuizScreen answerOrder={answerOrder} currentQuestion={quizQuestionIndex + 1} introSecondsRemaining={quizIntroSecondsRemaining} isIntroVisible={quizIntroVisible} isShowingAnswer={isShowingAnswer} isPaused={historyOpen} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
+        {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalPoints={totalPoints} totalQuestions={questionsPerRound} treeStage={treeStage} records={historyState.records} onClearRecords={clearRecords} onPlayAgain={resetRound} /> : null}
+        <Modal
+          className="records-modal"
+          footer={<Button htmlType="button" size="large" onClick={() => setHistoryOpen(false)}>Close</Button>}
+          open={historyOpen}
+          title="Score history"
+          typewriter={false}
+          onClose={() => setHistoryOpen(false)}
+        >
+          <p className="records-total">Total Wellbeing Points: <strong>{totalPoints}</strong></p>
+          <ScoreRecordList records={historyState.records} />
+          {historyState.records.length > 0 || historyState.error ? <button className="text-link" type="button" onClick={clearRecords}>Clear all records</button> : null}
+        </Modal>
         <Modal
           className="recognition-fallback-modal"
           footer={(

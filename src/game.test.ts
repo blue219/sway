@@ -10,8 +10,12 @@ describe('round rewards', () => {
     expect(scoreQuiz(5)).toBe(50)
   })
 
-  it('maps a perfect round to the Flourishing Tree stage', () => {
-    expect(getTreeStage(50).name).toBe('Flourishing Tree')
+  it('maps cumulative points to three tree stages at their boundaries', () => {
+    expect(getTreeStage(0).name).toBe('Sapling')
+    expect(getTreeStage(99).name).toBe('Sapling')
+    expect(getTreeStage(100).name).toBe('Tree')
+    expect(getTreeStage(249).name).toBe('Tree')
+    expect(getTreeStage(250).name).toBe('Large Tree')
   })
 
   it('shuffles the movement order without repeating an action', () => {

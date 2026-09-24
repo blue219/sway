@@ -6,6 +6,7 @@ import { createQuizGestureTracker, type QuizChoice } from '../quizRecognition'
 
 type QuizCameraPreviewProps = {
   isActive: boolean
+  isPaused?: boolean
   questionKey: number
   waitForIdle: boolean
   onChoice: (choice: QuizChoice) => void
@@ -17,11 +18,13 @@ const modelUrls = {
 }
 const requiredLabels = ['Idle', 'Option A', 'Option B']
 
-export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice }: QuizCameraPreviewProps) {
+export function QuizCameraPreview({ isActive, isPaused = false, questionKey, waitForIdle, onChoice }: QuizCameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const modelRef = useRef<CustomPoseNet | null>(null)
   const onChoiceRef = useRef(onChoice)
+  const trackerRef = useRef<ReturnType<typeof createQuizGestureTracker> | null>(null)
+  const trackerKeyRef = useRef('')
   const [cameraReady, setCameraReady] = useState(false)
   const [modelReady, setModelReady] = useState(false)
   const [cameraError, setCameraError] = useState('')
@@ -158,10 +161,22 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
 
   const status = cameraError || modelError ? 'unavailable' : cameraReady && modelReady ? 'ready' : 'loading'
   const message = cameraError || modelError
-  const canRecognize = isActive && status === 'ready'
+  const canRecognize = isActive && !isPaused && status === 'ready'
   useEffect(() => {
-    setHoldMs(0)
-    setWaitingForIdle(waitForIdle)
+    if (!isActive) {
+      trackerRef.current = null
+      setHoldMs(0)
+      setWaitingForIdle(waitForIdle)
+      return undefined
+    }
+
+    const trackerKey = `${questionKey}:${waitForIdle}`
+    if (!trackerRef.current || trackerKeyRef.current !== trackerKey) {
+      trackerRef.current = createQuizGestureTracker(waitForIdle)
+      trackerKeyRef.current = trackerKey
+      setHoldMs(0)
+      setWaitingForIdle(waitForIdle)
+    }
     if (!canRecognize) return undefined
     const video = videoRef.current
     const model = modelRef.current
@@ -172,7 +187,7 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
     const canvas = document.createElement('canvas')
     canvas.width = inferenceFrameSize
     canvas.height = inferenceFrameSize
-    const tracker = createQuizGestureTracker(waitForIdle)
+    const tracker = trackerRef.current
 
     const recognize = async () => {
       if (!current) return
@@ -202,12 +217,14 @@ export function QuizCameraPreview({ isActive, questionKey, waitForIdle, onChoice
       current = false
       window.cancelAnimationFrame(frameRequest)
     }
-  }, [canRecognize, questionKey, waitForIdle])
+  }, [canRecognize, isActive, questionKey, waitForIdle])
 
   const statusText = status === 'unavailable'
     ? message
     : status === 'loading'
       ? 'Starting camera and gesture model…'
+      : isPaused
+        ? 'Hand choices are paused while viewing records.'
       : !isActive
         ? 'Hand choices pause while the guide or answer is shown.'
         : waitingForIdle

@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RecognitionStatus } from './components/CameraPreview'
 import { createRandomQuizOrder, quizQuestions } from './game'
+import { scoreHistoryKey } from './scoreHistory'
 import App from './App'
 
 const movementTitles = ['Side Arm Raise', 'Standing March', 'Shallow Squat', 'Standing Side Bend', 'Side Leg Lift']
@@ -11,8 +12,9 @@ let nextRecognitionStatus: RecognitionStatus = { kind: 'ready' }
 let nextMovementRecognised = false
 
 vi.mock('./components/CameraPreview', () => ({
-  CameraPreview: ({ isTracking, movementLabel, onRecognitionStatusChange, onComplete, onActiveDurationChange, onRecognitionStateChange }: {
+  CameraPreview: ({ isTracking, isPaused, movementLabel, onRecognitionStatusChange, onComplete, onActiveDurationChange, onRecognitionStateChange }: {
     isTracking: boolean
+    isPaused: boolean
     movementLabel: string
     onRecognitionStatusChange: (recognitionStatus: RecognitionStatus) => void
     onComplete: () => void
@@ -27,7 +29,7 @@ vi.mock('./components/CameraPreview', () => ({
 
     return (
       <button
-        disabled={!isTracking}
+        disabled={!isTracking || isPaused}
         type="button"
         onClick={() => {
           onActiveDurationChange(5_000)
@@ -41,10 +43,10 @@ vi.mock('./components/CameraPreview', () => ({
 }))
 
 vi.mock('./components/QuizCameraPreview', () => ({
-  QuizCameraPreview: ({ isActive, onChoice }: { isActive: boolean; onChoice: (choice: 'A' | 'B') => void }) => (
+  QuizCameraPreview: ({ isActive, isPaused, onChoice }: { isActive: boolean; isPaused: boolean; onChoice: (choice: 'A' | 'B') => void }) => (
     <section aria-label="Quiz camera preview">
-      <button disabled={!isActive} onClick={() => onChoice('A')} type="button">Choose A gesture</button>
-      <button disabled={!isActive} onClick={() => onChoice('B')} type="button">Choose B gesture</button>
+      <button disabled={!isActive || isPaused} onClick={() => onChoice('A')} type="button">Choose A gesture</button>
+      <button disabled={!isActive || isPaused} onClick={() => onChoice('B')} type="button">Choose B gesture</button>
     </section>
   ),
 }))
@@ -84,6 +86,17 @@ function answerButton(answer: string) {
   return screen.getAllByRole('button').find((button) => button.getAttribute('aria-label')?.endsWith(`: ${answer}`))
 }
 
+function completePerfectRound() {
+  startAndCompleteMovementSequence()
+  finishQuizIntro()
+  for (let question = 0; question < 5; question += 1) {
+    const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
+    const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
+    fireEvent.click(answerButton(correctAnswer ?? '')!)
+    act(() => vi.advanceTimersByTime(1_000))
+  }
+}
+
 afterEach(() => {
   cleanup()
   nextRecognitionStatus = { kind: 'ready' }
@@ -91,6 +104,7 @@ afterEach(() => {
   cameraRenderSpy.mockClear()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  window.localStorage.clear()
   vi.useRealTimers()
 })
 
@@ -110,9 +124,9 @@ describe('Whakakori Together round', () => {
     chooseStanding()
 
     const expectedQuizImages = createRandomQuizOrder(quizQuestions.length, () => 0).map((index) => quizQuestions[index].image?.src)
-    expect(requestedImages).toHaveLength(7)
-    expect(requestedImages).toEqual(expect.arrayContaining([...expectedQuizImages, '/assets/quiz-gesture-guide.webp', '/assets/growing-tree.webp']))
-    expect(decode).toHaveBeenCalledTimes(7)
+    expect(requestedImages).toHaveLength(9)
+    expect(requestedImages).toEqual(expect.arrayContaining([...expectedQuizImages, '/assets/quiz-gesture-guide.webp', '/assets/tree-sapling.webp', '/assets/tree-medium.webp', '/assets/tree-large.webp']))
+    expect(decode).toHaveBeenCalledTimes(9)
   })
 
   it('shuffles five seated movements and recognizes arm reach and forward reach', () => {
@@ -160,7 +174,7 @@ describe('Whakakori Together round', () => {
     expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
   })
 
-  it('goes back through the visited screens and uses the logo to restart at selection', () => {
+  it('returns from a completed round to selection and uses the logo to restart', () => {
     vi.useFakeTimers()
     render(<App />)
     chooseStanding()
@@ -180,14 +194,10 @@ describe('Whakakori Together round', () => {
       act(() => vi.advanceTimersByTime(1_000))
     }
 
-    expect(screen.getByRole('heading', { name: 'Round complete' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
-    expect(screen.getAllByText('Question 5 of 5')).toHaveLength(2)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
-    expect(screen.getByLabelText('Movement 5 of 5')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
     expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Go back' })).not.toBeInTheDocument()
 
     chooseStanding()
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
@@ -293,6 +303,10 @@ describe('Whakakori Together round', () => {
 
     expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
     expect(screen.getByText('Next movement in')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    act(() => vi.advanceTimersByTime(5_000))
+    expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     completeCountdown()
 
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
@@ -338,37 +352,103 @@ describe('Whakakori Together round', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(firstQuestion)
   })
 
-  it.each(['Play another round', 'Finish for today'])('totals the score and resets the round with %s', (resetAction) => {
+  it('saves one score per completed round and grows the tree from cumulative points', () => {
     vi.useFakeTimers()
     render(<App />)
+    completePerfectRound()
+    expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
+    expect(screen.getByText(/You answered 5 of 5 questions correctly/)).toBeInTheDocument()
+    expect(screen.getByText('Wellbeing Points this round')).toBeInTheDocument()
+    expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
+    expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    expect(screen.getAllByText('5 of 5 correct')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Play another round' }))
+    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
+    expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
+    completePerfectRound()
+    expect(screen.getByLabelText('100 Wellbeing Points, Tree')).toBeInTheDocument()
+    expect(screen.getByAltText('Tree wellbeing tree')).toHaveAttribute('src', '/assets/tree-medium.webp')
+    expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(2)
+  })
 
+  it('restores records after refresh and clears them only after confirmation', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    completePerfectRound()
+    cleanup()
+    render(<App />)
+    expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    expect(screen.getByText('5 of 5 correct')).toBeInTheDocument()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all records' }))
+    expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
+    confirm.mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all records' }))
+    expect(window.localStorage.getItem(scoreHistoryKey)).toBeNull()
+    expect(screen.getByLabelText('0 Wellbeing Points, Sapling')).toBeInTheDocument()
+    expect(screen.getByText('No saved rounds yet.')).toBeInTheDocument()
+  })
+
+  it('pauses movement recognition and quiz countdown while records are open', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    chooseStanding()
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
+    for (let movement = 0; movement < 5; movement += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    act(() => vi.advanceTimersByTime(5_000))
+    expect(screen.getByRole('region', { name: 'Hand choice guide' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    finishQuizIntro()
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+  })
+
+  it('keeps the current round visible after clearing its saved record', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    completePerfectRound()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all records' }))
+    expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
+    expect(screen.getByText('Wellbeing Points this round')).toBeInTheDocument()
+    expect(screen.getByLabelText('0 Wellbeing Points, Sapling')).toBeInTheDocument()
+    expect(screen.getByText('No saved rounds yet.')).toBeInTheDocument()
+    expect(window.localStorage.getItem(scoreHistoryKey)).toBeNull()
+  })
+
+  it('does not advance an answered question while records are open', () => {
+    vi.useFakeTimers()
+    render(<App />)
     startAndCompleteMovementSequence()
     finishQuizIntro()
+    const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
+    const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
+    fireEvent.click(answerButton(correctAnswer ?? '')!)
+    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    act(() => vi.advanceTimersByTime(5_000))
+    expect(screen.getByRole('heading', { name: questionText })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    act(() => vi.advanceTimersByTime(1_000))
+    expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(questionText)
+  })
 
-    const answeredQuestions = new Set<string>()
-    for (let question = 0; question < 5; question += 1) {
-      const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
-      answeredQuestions.add(questionText)
-      const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
-      const correctOption = answerButton(correctAnswer ?? '')
-
-      expect(correctOption).toBeDefined()
-      fireEvent.click(correctOption!)
-      expect(document.querySelector('.quiz-option-correct')).toBeInTheDocument()
-      act(() => vi.advanceTimersByTime(1_000))
-    }
-
-    expect(screen.getByRole('heading', { name: 'Round complete' })).toBeInTheDocument()
-    expect(answeredQuestions).toHaveLength(5)
-    expect(screen.getByText(/You answered 5 of 5 questions correctly/)).toBeInTheDocument()
-    expect(screen.getByText('+50 Wellbeing Points')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: resetAction }))
-
-    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
-    expect(screen.getByLabelText('0 Wellbeing Points, Seed')).toBeInTheDocument()
-    chooseStanding()
-    expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
+  it('shows a notice when this browser cannot save scores', () => {
+    vi.useFakeTimers()
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied') })
+    render(<App />)
+    completePerfectRound()
+    expect(screen.getByRole('status')).toHaveTextContent('Scores could not be saved on this device.')
+    expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
   })
 })
