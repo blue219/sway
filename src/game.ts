@@ -112,33 +112,33 @@ export function getTreeStage(points: number): TreeStage {
 
 export const quizQuestions: QuizQuestion[] = [
   {
-    question: 'What colour are pōhutukawa flowers?',
-    options: ['Red', 'Blue'],
-    correctAnswer: 'Red',
+    question: 'In which season do pōhutukawa usually flower?',
+    options: ['Winter', 'Summer'],
+    correctAnswer: 'Summer',
     image: { alt: 'A pōhutukawa branch with red flowers', src: '/assets/quiz-pohutukawa.webp' },
   },
   {
-    question: 'What kind of bird is a kākāpō?',
-    options: ['Parrot', 'Penguin'],
-    correctAnswer: 'Parrot',
+    question: 'Can a kākāpō fly?',
+    options: ['Yes', 'No'],
+    correctAnswer: 'No',
     image: { alt: 'A green kākāpō perched on a branch', src: '/assets/quiz-kakapo.webp' },
   },
   {
-    question: 'What plant inspires the koru shape?',
-    options: ['Fern', 'Palm'],
-    correctAnswer: 'Fern',
+    question: 'How do ferns make new plants?',
+    options: ['Seeds', 'Spores'],
+    correctAnswer: 'Spores',
     image: { alt: 'An unfurling fern frond', src: '/assets/quiz-koru.webp' },
   },
   {
-    question: 'What is harakeke often used for?',
-    options: ['Weaving', 'Pottery'],
-    correctAnswer: 'Weaving',
+    question: 'Where is harakeke commonly found?',
+    options: ['Wetlands and rivers', 'Dry inland plains'],
+    correctAnswer: 'Wetlands and rivers',
     image: { alt: 'Harakeke leaves beside a woven basket', src: '/assets/quiz-harakeke.webp' },
   },
   {
-    question: 'How many red stars are on the New Zealand flag?',
-    options: ['Four', 'Five'],
-    correctAnswer: 'Four',
+    question: 'When was the New Zealand flag formally adopted?',
+    options: ['1869', '1902'],
+    correctAnswer: '1902',
     image: { alt: 'The New Zealand flag with four red stars', src: '/assets/quiz-flag.webp' },
   },
 ]
