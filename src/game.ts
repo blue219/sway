@@ -84,7 +84,7 @@ export function createRandomMovementOrder(count: number, random = Math.random): 
 }
 
 export function createRandomQuizOrder(count: number, random = Math.random): number[] {
-  return createRandomMovementOrder(count, random)
+  return createRandomMovementOrder(count, random).slice(0, Math.min(count, questionsPerRound))
 }
 
 export function createRandomAnswerOrder(options: string[], random = Math.random): string[] {
@@ -140,5 +140,35 @@ export const quizQuestions: QuizQuestion[] = [
     options: ['1869', '1902'],
     correctAnswer: '1902',
     image: { alt: 'The New Zealand flag with four red stars', src: '/assets/quiz-flag.webp' },
+  },
+  {
+    question: 'Which island is Aoraki / Mount Cook on?',
+    options: ['North Island', 'South Island'],
+    correctAnswer: 'South Island',
+    image: { alt: 'Snowy mountain peaks above an alpine valley', src: '/assets/quiz-aoraki.webp' },
+  },
+  {
+    question: 'What is New Zealand’s longest river?',
+    options: ['Waikato River', 'Clutha River'],
+    correctAnswer: 'Waikato River',
+    image: { alt: 'A wide river winding through green hills', src: '/assets/quiz-river.webp' },
+  },
+  {
+    question: 'What is the name of the strait between the North and South Islands?',
+    options: ['Cook Strait', 'Foveaux Strait'],
+    correctAnswer: 'Cook Strait',
+    image: { alt: 'A sea channel between two green coastlines', src: '/assets/quiz-cook-strait.webp' },
+  },
+  {
+    question: 'When are kiwi usually most active?',
+    options: ['At night', 'During the day'],
+    correctAnswer: 'At night',
+    image: { alt: 'A kiwi bird standing among ferns', src: '/assets/quiz-kiwi.webp' },
+  },
+  {
+    question: 'What is it called when a dolphin uses clicks to find prey?',
+    options: ['Echolocation', 'Migration'],
+    correctAnswer: 'Echolocation',
+    image: { alt: 'A Hector’s dolphin swimming in clear coastal water', src: '/assets/quiz-hectors-dolphin.webp' },
   },
 ]

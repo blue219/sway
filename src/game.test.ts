@@ -39,10 +39,12 @@ describe('round rewards', () => {
     ])
   })
 
-  it('creates a shuffled quiz order without repeated questions', () => {
+  it('selects five shuffled quiz questions without repeats from the question bank', () => {
     const questionOrder = createRandomQuizOrder(quizQuestions.length, () => 0)
 
-    expect(new Set(questionOrder.slice(0, questionsPerRound))).toHaveLength(questionsPerRound)
+    expect(questionOrder).toHaveLength(questionsPerRound)
+    expect(new Set(questionOrder)).toHaveLength(questionsPerRound)
+    expect(questionOrder.every((index) => index >= 0 && index < quizQuestions.length)).toBe(true)
   })
 
   it('shuffles answer choices without modifying the question bank', () => {
@@ -52,8 +54,8 @@ describe('round rewards', () => {
     expect(options).toEqual(['A', 'B', 'C', 'D'])
   })
 
-  it('includes five new illustrated questions with two distinct answers each', () => {
-    expect(quizQuestions).toHaveLength(5)
+  it('includes ten illustrated questions with two distinct answers each', () => {
+    expect(quizQuestions).toHaveLength(10)
     expect(quizQuestions.every((question) =>
       question.options.length === 2 &&
       new Set(question.options).size === 2 &&
