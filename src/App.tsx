@@ -7,11 +7,12 @@ import { ModeSelectionScreen } from './components/ModeSelectionScreen'
 import { QuizScreen } from './components/QuizScreen'
 import { ResultScreen } from './components/ResultScreen'
 import { ScoreRecordList } from './components/ScoreRecordList'
+import { WelcomeScreen } from './components/WelcomeScreen'
 import { createBalancedAnswerOrders, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements, treeStages } from './game'
 import { requiredMovementDurationMs } from './poseRecognition'
 import { clearScoreHistory, loadScoreHistory, saveScoreHistory, totalScore } from './scoreHistory'
 
-type Screen = 'selection' | 'movement' | 'quiz' | 'result'
+type Screen = 'welcome' | 'selection' | 'movement' | 'quiz' | 'result'
 type MovementPhase = 'idle' | 'waitingForRecognition' | 'recognizing' | 'countdown'
 type MovementStyle = 'standing' | 'seated'
 
@@ -38,7 +39,7 @@ function preloadRoundImages(quizOrder: number[]) {
 }
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('selection')
+  const [screen, setScreen] = useState<Screen>('welcome')
   const [movementStyle, setMovementStyle] = useState<MovementStyle>('standing')
   const [movementIndex, setMovementIndex] = useState(0)
   const [movementOrder, setMovementOrder] = useState(() => createRandomMovementOrder(movements.length))
@@ -63,7 +64,7 @@ function App() {
   const totalPoints = totalScore(historyState.records)
   const activeMovements = movementStyle === 'seated' ? seatedMovements : movements
   const movementIndexRef = useRef(0)
-  const screenRef = useRef<Screen>('selection')
+  const screenRef = useRef<Screen>('welcome')
   const screenHistoryRef = useRef<Screen[]>([])
   const preloadedImagesRef = useRef<HTMLImageElement[]>([])
   const historyRef = useRef(historyState.records)
@@ -228,7 +229,7 @@ function App() {
     }
   }, [fallbackTimerEnabled, movementPhase, recognitionStatus])
 
-  function resetRound() {
+  function resetRound(nextScreen: 'welcome' | 'selection' = 'selection') {
     const nextQuizOrder = createRandomQuizOrder(quizQuestions.length)
 
     preloadedImagesRef.current = []
@@ -254,8 +255,8 @@ function App() {
     savedRoundRef.current = false
     setHistoryOpen(false)
     screenHistoryRef.current = []
-    screenRef.current = 'selection'
-    setScreen('selection')
+    screenRef.current = nextScreen
+    setScreen(nextScreen)
   }
 
   function startRound(style: MovementStyle) {
@@ -359,12 +360,13 @@ function App() {
         <AppHeader
           canGoBack={screenHistoryRef.current.length > 0}
           onGoBack={goBack}
-          onGoHome={resetRound}
+          onGoHome={() => resetRound('welcome')}
           onOpenRecords={() => setHistoryOpen(true)}
           points={totalPoints}
           treeStage={treeStage}
         />
         {historyState.error ? <p className="storage-notice" role="status">{historyState.error}</p> : null}
+        {screen === 'welcome' ? <WelcomeScreen onStart={() => navigateToScreen('selection')} /> : null}
         {screen === 'selection' ? <ModeSelectionScreen onChooseStanding={() => startRound('standing')} onChooseSeated={() => startRound('seated')} /> : null}
         {screen === 'movement' ? (
           <MovementScreen
@@ -387,7 +389,7 @@ function App() {
           />
         ) : null}
         {screen === 'quiz' ? <QuizScreen answerOrder={answerOrders[quizQuestionIndex]} currentQuestion={quizQuestionIndex + 1} introSecondsRemaining={quizIntroSecondsRemaining} isIntroVisible={quizIntroVisible} isShowingAnswer={isShowingAnswer} isPaused={historyOpen} quiz={activeQuiz} selectedAnswer={selectedAnswer} totalQuestions={questionsPerRound} onAnswer={answerQuiz} /> : null}
-        {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalPoints={totalPoints} totalQuestions={questionsPerRound} treeStage={treeStage} records={historyState.records} onClearRecords={clearRecords} onPlayAgain={resetRound} /> : null}
+        {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalPoints={totalPoints} totalQuestions={questionsPerRound} treeStage={treeStage} records={historyState.records} onClearRecords={clearRecords} onPlayAgain={() => resetRound()} /> : null}
         <Modal
           className="records-modal"
           footer={<Button htmlType="button" size="large" onClick={() => setHistoryOpen(false)}>Close</Button>}

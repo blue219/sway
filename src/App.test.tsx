@@ -51,7 +51,14 @@ vi.mock('./components/QuizCameraPreview', () => ({
   ),
 }))
 
+function openModeSelection() {
+  if (screen.queryByRole('main', { name: 'Welcome' })) {
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+  }
+}
+
 function chooseStanding() {
+  openModeSelection()
   fireEvent.click(screen.getByRole('button', { name: /choose standing/i }))
 }
 
@@ -109,6 +116,22 @@ afterEach(() => {
 })
 
 describe('Whakakori Together round', () => {
+  it('opens on the welcome screen without a camera and starts with mode selection', () => {
+    render(<App />)
+
+    expect(screen.getByRole('img', { name: 'A standing older adult' })).toHaveAttribute('src', '/assets/selection-standing.webp')
+    expect(screen.getByText('Camera footage is not recorded or stored')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /choose standing/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Go back' })).not.toBeInTheDocument()
+    expect(cameraRenderSpy).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
+    expect(cameraRenderSpy).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
+    expect(screen.getByRole('main', { name: 'Welcome' })).toBeInTheDocument()
+  })
+
   it('keeps the header focused on the tree, points, and records', () => {
     render(<App />)
     const headerStatus = screen.getByRole('banner').querySelector('.header-status')
@@ -144,6 +167,7 @@ describe('Whakakori Together round', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0)
     render(<App />)
 
+    openModeSelection()
     const choices = screen.getAllByRole('button', { name: /choose (standing|seated)/i })
     expect(choices.map((choice) => choice.querySelector('.mode-card-title')?.textContent)).toEqual(['Standing', 'Seated'])
     expect(choices.map((choice) => choice.querySelector('img')?.getAttribute('src'))).toEqual(['/assets/selection-standing.webp', '/assets/selection-seated.webp'])
@@ -176,7 +200,7 @@ describe('Whakakori Together round', () => {
     expect(screen.getByText('Question 1 of 3')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
-    expect(screen.getByRole('button', { name: /choose seated/i })).toBeInTheDocument()
+    expect(screen.getByRole('main', { name: 'Welcome' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Seated arm reach' })).not.toBeInTheDocument()
 
     chooseStanding()
@@ -211,7 +235,7 @@ describe('Whakakori Together round', () => {
 
     chooseStanding()
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
-    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
+    expect(screen.getByRole('main', { name: 'Welcome' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Go back' })).not.toBeInTheDocument()
 
     chooseStanding()
