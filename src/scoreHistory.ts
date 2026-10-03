@@ -3,6 +3,7 @@ import { questionsPerRound, scoreQuiz } from './game'
 export type ScoreRecord = {
   completedAt: string
   correctAnswers: number
+  totalQuestions?: number
   points: number
 }
 
@@ -16,11 +17,14 @@ export const scoreHistoryKey = 'whakakori.scoreHistory.v1'
 function isScoreRecord(value: unknown): value is ScoreRecord {
   if (typeof value !== 'object' || value === null) return false
   const record = value as Partial<ScoreRecord>
-  return typeof record.completedAt === 'string'
+  // Records saved before the three-question rounds used five questions.
+  const totalQuestions = record.totalQuestions ?? 5
+  return (totalQuestions === questionsPerRound || totalQuestions === 5)
+    && typeof record.completedAt === 'string'
     && !Number.isNaN(Date.parse(record.completedAt))
     && Number.isInteger(record.correctAnswers)
     && record.correctAnswers! >= 0
-    && record.correctAnswers! <= questionsPerRound
+    && record.correctAnswers! <= totalQuestions
     && record.points === scoreQuiz(record.correctAnswers!)
 }
 

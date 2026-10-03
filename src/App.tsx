@@ -140,6 +140,7 @@ function App() {
           const records = [...historyRef.current, {
             completedAt: new Date().toISOString(),
             correctAnswers,
+            totalQuestions: questionsPerRound,
             points: scoreQuiz(correctAnswers),
           }]
           historyRef.current = records

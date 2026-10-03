@@ -89,7 +89,7 @@ function answerButton(answer: string) {
 function completePerfectRound() {
   startAndCompleteMovementSequence()
   finishQuizIntro()
-  for (let question = 0; question < 5; question += 1) {
+  for (let question = 0; question < 3; question += 1) {
     const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
     const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
     fireEvent.click(answerButton(correctAnswer ?? '')!)
@@ -134,9 +134,9 @@ describe('Whakakori Together round', () => {
     chooseStanding()
 
     const expectedQuizImages = createRandomQuizOrder(quizQuestions.length, () => 0).map((index) => quizQuestions[index].image?.src)
-    expect(requestedImages).toHaveLength(9)
+    expect(requestedImages).toHaveLength(7)
     expect(requestedImages).toEqual(expect.arrayContaining([...expectedQuizImages, '/assets/quiz-gesture-guide.webp', '/assets/tree-sapling.webp', '/assets/tree-medium.webp', '/assets/tree-large.webp']))
-    expect(decode).toHaveBeenCalledTimes(9)
+    expect(decode).toHaveBeenCalledTimes(7)
   })
 
   it('shuffles five seated movements and recognizes arm reach and forward reach', () => {
@@ -173,7 +173,7 @@ describe('Whakakori Together round', () => {
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     finishQuizIntro()
-    expect(screen.getByText('Question 1 of 5')).toBeInTheDocument()
+    expect(screen.getByText('Question 1 of 3')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
     expect(screen.getByRole('button', { name: /choose seated/i })).toBeInTheDocument()
@@ -193,9 +193,9 @@ describe('Whakakori Together round', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     }
     finishQuizIntro()
-    expect(screen.getByText('Question 1 of 5')).toBeInTheDocument()
+    expect(screen.getByText('Question 1 of 3')).toBeInTheDocument()
 
-    for (let question = 0; question < 5; question += 1) {
+    for (let question = 0; question < 3; question += 1) {
       const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
       const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
       const correctOption = answerButton(correctAnswer ?? '')
@@ -259,7 +259,7 @@ describe('Whakakori Together round', () => {
     }
 
     finishQuizIntro()
-    expect(screen.getByText('Question 1 of 5')).toBeInTheDocument()
+    expect(screen.getByText('Question 1 of 3')).toBeInTheDocument()
   })
 
   it('shows the hand guide for three seconds and can reopen it without accepting a gesture', () => {
@@ -360,7 +360,7 @@ describe('Whakakori Together round', () => {
 
     act(() => vi.advanceTimersByTime(1_000))
 
-    expect(screen.getByText('Question 2 of 5')).toBeInTheDocument()
+    expect(screen.getByText('Question 2 of 3')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(firstQuestion)
     const secondQuestion = screen.getByRole('heading', { level: 1 }).textContent
     const secondCorrectAnswer = quizQuestions.find((quiz) => quiz.question === secondQuestion)?.correctAnswer
@@ -380,7 +380,7 @@ describe('Whakakori Together round', () => {
     finishQuizIntro()
     const correctLetters: string[] = []
 
-    for (let question = 0; question < 5; question += 1) {
+    for (let question = 0; question < 3; question += 1) {
       const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
       const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer ?? ''
       const correctOption = answerButton(correctAnswer)
@@ -389,8 +389,8 @@ describe('Whakakori Together round', () => {
       act(() => vi.advanceTimersByTime(1_000))
     }
 
-    expect(correctLetters.filter((letter) => letter === 'A')).toHaveLength(3)
-    expect(correctLetters.filter((letter) => letter === 'B')).toHaveLength(2)
+    expect(correctLetters.filter((letter) => letter === 'A')).toHaveLength(2)
+    expect(correctLetters.filter((letter) => letter === 'B')).toHaveLength(1)
   })
 
   it('saves one score per completed round and grows the tree from cumulative points', () => {
@@ -399,21 +399,26 @@ describe('Whakakori Together round', () => {
     completePerfectRound()
     expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
     expect(document.querySelectorAll('.celebration-bursts-result .celebration-burst')).toHaveLength(10)
-    expect(screen.getByText(/You answered 5 of 5 questions correctly/)).toBeInTheDocument()
+    expect(screen.getByText(/You answered 3 of 3 questions correctly/)).toBeInTheDocument()
     expect(screen.getByText('Wellbeing Points this round')).toBeInTheDocument()
-    expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
+    expect(screen.getByLabelText('30 Wellbeing Points, Sapling')).toBeInTheDocument()
     expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: 'Records' }))
-    expect(screen.getAllByText('5 of 5 correct')).toHaveLength(2)
+    expect(screen.getAllByText('3 of 3 correct')).toHaveLength(2)
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: 'Play another round' }))
     expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
-    expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
+    expect(screen.getByLabelText('30 Wellbeing Points, Sapling')).toBeInTheDocument()
     completePerfectRound()
-    expect(screen.getByLabelText('100 Wellbeing Points, Tree')).toBeInTheDocument()
+    expect(screen.getByLabelText('60 Wellbeing Points, Sapling')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Play another round' }))
+    completePerfectRound()
+    fireEvent.click(screen.getByRole('button', { name: 'Play another round' }))
+    completePerfectRound()
+    expect(screen.getByLabelText('120 Wellbeing Points, Tree')).toBeInTheDocument()
     expect(screen.getByAltText('Tree wellbeing tree')).toHaveAttribute('src', '/assets/tree-medium.webp')
-    expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(2)
+    expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(4)
   })
 
   it('restores records after refresh and clears them only after confirmation', () => {
@@ -422,9 +427,9 @@ describe('Whakakori Together round', () => {
     completePerfectRound()
     cleanup()
     render(<App />)
-    expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
+    expect(screen.getByLabelText('30 Wellbeing Points, Sapling')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Records' }))
-    expect(screen.getByText('5 of 5 correct')).toBeInTheDocument()
+    expect(screen.getByText('3 of 3 correct')).toBeInTheDocument()
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     fireEvent.click(screen.getByRole('button', { name: 'Clear all records' }))
     expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
@@ -433,6 +438,17 @@ describe('Whakakori Together round', () => {
     expect(window.localStorage.getItem(scoreHistoryKey)).toBeNull()
     expect(screen.getByLabelText('0 Wellbeing Points, Sapling')).toBeInTheDocument()
     expect(screen.getByText('No saved rounds yet.')).toBeInTheDocument()
+  })
+
+  it('preserves the score and question count of legacy five-question records', () => {
+    window.localStorage.setItem(scoreHistoryKey, JSON.stringify([
+      { completedAt: '2026-09-24T00:00:00.000Z', correctAnswers: 5, points: 50 },
+    ]))
+    render(<App />)
+
+    expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    expect(screen.getByText('5 of 5 correct')).toBeInTheDocument()
   })
 
   it('pauses movement recognition and quiz countdown while records are open', () => {

@@ -2,7 +2,7 @@
 Whakakori Together is a frontend-only, non-commercial movement and quiz prototype for older adults. See README.md for current behaviour and model setup.
 
 ## Goal
-Preserve the five-movement round, five-question quiz, and locally saved wellbeing score history while keeping the facilitator-supported experience simple and accessible.
+Preserve the five-movement round, three-question quiz, and locally saved wellbeing score history while keeping the facilitator-supported experience simple and accessible.
 
 ## Local Startup
 - Run `pnpm install`, then `pnpm dev`.

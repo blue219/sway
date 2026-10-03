@@ -22,6 +22,21 @@ describe('score history', () => {
     expect(loadScoreHistory()).toEqual({ records: [], error: 'Saved scores could not be read.' })
   })
 
+  it('loads legacy five-question scores alongside new three-question scores', () => {
+    const legacyRecord = { ...record, correctAnswers: 5, points: 50 }
+    const newRecord = { ...record, totalQuestions: 3 }
+    saveScoreHistory([legacyRecord, newRecord])
+
+    expect(loadScoreHistory()).toEqual({ records: [legacyRecord, newRecord], error: null })
+    expect(totalScore(loadScoreHistory().records)).toBe(80)
+  })
+
+  it('rejects scores with more correct answers than the saved question count', () => {
+    saveScoreHistory([{ ...record, totalQuestions: 3, correctAnswers: 4, points: 40 }])
+
+    expect(loadScoreHistory().error).toBe('Saved scores could not be read.')
+  })
+
   it('reports unavailable storage for reads, writes and clears', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('denied') })
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied') })

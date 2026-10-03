@@ -1,5 +1,4 @@
 import type { ScoreRecord } from '../scoreHistory'
-import { questionsPerRound } from '../game'
 
 type ScoreRecordListProps = {
   records: ScoreRecord[]
@@ -15,7 +14,7 @@ export function ScoreRecordList({ records }: ScoreRecordListProps) {
       {[...records].sort((left, right) => Date.parse(right.completedAt) - Date.parse(left.completedAt)).map((record, index) => (
         <li className="score-record" key={`${record.completedAt}-${index}`}>
           <time dateTime={record.completedAt}>{new Date(record.completedAt).toLocaleString()}</time>
-          <span>{record.correctAnswers} of {questionsPerRound} correct</span>
+          <span>{record.correctAnswers} of {record.totalQuestions ?? 5} correct</span>
           <strong>+{record.points}</strong>
         </li>
       ))}

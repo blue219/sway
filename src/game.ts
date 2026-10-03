@@ -20,7 +20,7 @@ export type QuizQuestion = {
   }
 }
 
-export const questionsPerRound = 5
+export const questionsPerRound = 3
 const pointsPerCorrectAnswer = 10
 
 export const movements: Movement[] = [

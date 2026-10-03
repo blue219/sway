@@ -6,8 +6,8 @@ describe('round rewards', () => {
     expect(scoreQuiz(1)).toBe(10)
   })
 
-  it('awards 50 points for five correct answers', () => {
-    expect(scoreQuiz(5)).toBe(50)
+  it('awards 30 points for three correct answers', () => {
+    expect(scoreQuiz(3)).toBe(30)
   })
 
   it('maps cumulative points to three tree stages at their boundaries', () => {
@@ -43,15 +43,15 @@ describe('round rewards', () => {
     ])
   })
 
-  it('selects five shuffled quiz questions without repeats from the question bank', () => {
+  it('selects three shuffled quiz questions without repeats from the question bank', () => {
     const questionOrder = createRandomQuizOrder(quizQuestions.length, () => 0)
 
-    expect(questionOrder).toHaveLength(questionsPerRound)
+    expect(questionOrder).toHaveLength(3)
     expect(new Set(questionOrder)).toHaveLength(questionsPerRound)
     expect(questionOrder.every((index) => index >= 0 && index < quizQuestions.length)).toBe(true)
   })
 
-  it('places correct answers in both A and B across each five-question round', () => {
+  it('places correct answers in both A and B across each three-question round', () => {
     const questions = quizQuestions.slice(0, questionsPerRound)
     const originalOptions = questions.map((question) => [...question.options])
 
@@ -59,7 +59,7 @@ describe('round rewards', () => {
       const orders = createBalancedAnswerOrders(questions, random)
       const correctA = orders.filter((order, index) => order[0] === questions[index].correctAnswer).length
 
-      expect([correctA, questionsPerRound - correctA].sort()).toEqual([2, 3])
+      expect([correctA, questionsPerRound - correctA].sort()).toEqual([1, 2])
       orders.forEach((order, index) => expect([...order].sort()).toEqual([...originalOptions[index]].sort()))
       expect(questions.map((question) => question.options)).toEqual(originalOptions)
     }
