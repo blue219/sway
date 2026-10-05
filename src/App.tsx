@@ -11,6 +11,8 @@ import { WelcomeScreen } from './components/WelcomeScreen'
 import { createBalancedAnswerOrders, createRandomMovementOrder, createRandomQuizOrder, getTreeStage, movements, questionsPerRound, quizQuestions, scoreQuiz, seatedMovements, treeStages } from './game'
 import { requiredMovementDurationMs } from './poseRecognition'
 import { clearScoreHistory, loadScoreHistory, saveScoreHistory, totalScore } from './scoreHistory'
+import { instructions } from './bilingual'
+import { BilingualText } from './components/BilingualText'
 
 type Screen = 'welcome' | 'selection' | 'movement' | 'quiz' | 'result'
 type MovementPhase = 'idle' | 'waitingForRecognition' | 'recognizing' | 'countdown'
@@ -392,32 +394,32 @@ function App() {
         {screen === 'result' ? <ResultScreen correctAnswers={correctAnswers} points={points} totalPoints={totalPoints} totalQuestions={questionsPerRound} treeStage={treeStage} records={historyState.records} onClearRecords={clearRecords} onPlayAgain={() => resetRound()} /> : null}
         <Modal
           className="records-modal"
-          footer={<Button htmlType="button" size="large" onClick={() => setHistoryOpen(false)}>Close</Button>}
+          footer={<Button htmlType="button" size="large" onClick={() => setHistoryOpen(false)}><BilingualText entry={instructions.recordsModal.close} /></Button>}
           open={historyOpen}
-          title="Score history"
+          title={<BilingualText entry={instructions.recordsModal.title} />}
           typewriter={false}
           onClose={() => setHistoryOpen(false)}
         >
           <p className="records-total">Total Wellbeing Points: <strong>{totalPoints}</strong></p>
           <ScoreRecordList records={historyState.records} />
-          {historyState.records.length > 0 || historyState.error ? <button className="text-link" type="button" onClick={clearRecords}>Clear all records</button> : null}
+          {historyState.records.length > 0 || historyState.error ? <button className="text-link" type="button" onClick={clearRecords}><BilingualText entry={instructions.recordsModal.clearAll} /></button> : null}
         </Modal>
         <Modal
           className="recognition-fallback-modal"
           footer={(
             <div className="dialog-actions">
-              <Button htmlType="button" size="large" type="default" onClick={cancelFallbackPrompt}>Not now</Button>
-              <Button htmlType="button" size="large" type="primary" onClick={continueWithoutRecognition}>Continue</Button>
+              <Button htmlType="button" size="large" type="default" onClick={cancelFallbackPrompt}><BilingualText entry={instructions.fallbackModal.notNow} /></Button>
+              <Button htmlType="button" size="large" type="primary" onClick={continueWithoutRecognition}><BilingualText entry={instructions.fallbackModal.continueAction} /></Button>
             </div>
           )}
           maskClosable={false}
           open={fallbackPromptReason !== null}
-          title="Pose recognition unavailable"
+          title={<BilingualText entry={instructions.fallbackModal.title} />}
           typewriter={false}
           onClose={cancelFallbackPrompt}
         >
           <p className="fallback-dialog-copy">{fallbackPromptReason}</p>
-          <p className="fallback-dialog-copy">Continue with a five-second timer for each remaining movement?</p>
+          <p className="fallback-dialog-copy"><BilingualText entry={instructions.fallbackModal.prompt} /></p>
         </Modal>
       </div>
     </Cursor>

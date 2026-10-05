@@ -1,5 +1,7 @@
 import { Button, Card, Progress } from 'animal-island-ui'
 import type { TreeStage } from '../game'
+import { instructions } from '../bilingual'
+import { BilingualText } from './BilingualText'
 
 type AppHeaderProps = {
   canGoBack: boolean
@@ -16,7 +18,11 @@ export function AppHeader({ canGoBack, onGoBack, onGoHome, onOpenRecords, points
   return (
     <header className="app-header">
       <div className="header-navigation">
-        {canGoBack ? <Button className="header-back-button" htmlType="button" size="large" type="default" onClick={onGoBack}>Go back</Button> : null}
+        {canGoBack ? (
+          <Button className="header-back-button" htmlType="button" size="large" type="default" onClick={onGoBack}>
+            <BilingualText entry={instructions.header.goBack} />
+          </Button>
+        ) : null}
         <button aria-label="Return to start screen" className="brand brand-home" type="button" onClick={onGoHome}>
           <svg aria-hidden="true" className="brand-mark" viewBox="0 0 48 48">
             <path d="M24 42C10 35 8 21 16 9c8 2 14 8 14 16 0 7-3 12-6 17Z" fill="currentColor" />
@@ -32,10 +38,14 @@ export function AppHeader({ canGoBack, onGoBack, onGoHome, onOpenRecords, points
           <Progress aria-label={`Tree growth: ${treeStage.name}`} percent={progress} showInfo={false} size="small" />
         </Card>
         <Card className="status-card" color="app-yellow">
-          <span className="status-label">Points</span>
+          <span className="status-label">
+            <BilingualText entry={instructions.header.points} />
+          </span>
           <strong>{points}</strong>
         </Card>
-        <button className="header-records-link" type="button" onClick={onOpenRecords}>Records</button>
+        <button className="header-records-link" type="button" onClick={onOpenRecords}>
+          <BilingualText entry={instructions.header.records} />
+        </button>
       </div>
     </header>
   )

@@ -5,6 +5,8 @@ import type { RecognitionStatus } from './CameraPreview'
 import type { Movement } from '../game'
 import { CameraPreview } from './CameraPreview'
 import { MovementVideo } from './MovementVideo'
+import { formatBilingual, instructions, movementTranslations } from '../bilingual'
+import { BilingualText } from './BilingualText'
 
 type MovementScreenProps = {
   currentMovement: number
@@ -44,7 +46,12 @@ export function MovementScreen({
   onStart,
 }: MovementScreenProps) {
   const [isMovementRecognised, setIsMovementRecognised] = useState<boolean | null>(null)
-  const progressLabel = isCountingDown ? 'Next movement in' : usePoseRecognition ? 'Hold' : ''
+  const movementBilingual = movementTranslations[movement.title] ?? { en: movement.title, mi: movement.title }
+  const progressLabelEntry = isCountingDown
+    ? instructions.movement.nextMovementIn
+    : usePoseRecognition
+      ? instructions.movement.hold
+      : null
   const progressValue = isCountingDown
     ? `${secondsRemaining} s`
     : usePoseRecognition
@@ -57,17 +64,19 @@ export function MovementScreen({
         <div className="movement-card-heading">
           <img alt="" className="movement-action-icon" src="/assets/movement-activity-icon.webp" />
           <div className="movement-introduction">
-            <h1 id="movement-title">{movement.title}</h1>
+            <h1 id="movement-title">
+              <BilingualText entry={movementBilingual} />
+            </h1>
           </div>
           <div className="movement-action-controls">
             <span aria-label={`Movement ${currentMovement} of ${totalMovements}`} className="movement-index">
               {currentMovement}/{totalMovements}
             </span>
             <Button className="start-movement-button" disabled={isPaused || isTracking || isWaitingForRecognition || isCountingDown} htmlType="button" size="large" type="primary" onClick={onStart}>
-              Start
+              <BilingualText entry={instructions.movement.start} />
             </Button>
             <Button className="skip-movement-button" disabled={isPaused} htmlType="button" size="large" type="default" onClick={onSkip}>
-              Skip
+              <BilingualText entry={instructions.movement.skip} />
             </Button>
           </div>
         </div>
@@ -87,7 +96,7 @@ export function MovementScreen({
           {usePoseRecognition || isCountingDown ? (
             <div className="movement-progress" aria-live="polite">
               {isTracking && isMovementRecognised !== null ? <span aria-label={isMovementRecognised ? 'Movement recognised' : 'Movement not recognised'} className={`movement-recognition-indicator${isMovementRecognised ? ' movement-recognition-indicator-success' : ''}`}>{isMovementRecognised ? '✓' : '×'}</span> : null}
-              <span>{progressLabel}</span>
+              {progressLabelEntry ? <span><BilingualText entry={progressLabelEntry} /></span> : null}
               <strong>{progressValue}</strong>
             </div>
           ) : null}
@@ -104,8 +113,8 @@ export function MovementScreen({
               onActiveDurationChange={onActiveDurationChange}
             />
           ) : (
-            <div aria-label={isCountingDown ? 'Timer mode' : 'Pose model not connected yet'} className="camera-preview-area movement-model-placeholder">
-              {isCountingDown ? 'Timer mode' : 'Model coming soon'}
+            <div aria-label={isCountingDown ? formatBilingual(instructions.movement.timerMode) : 'Pose model not connected yet'} className="camera-preview-area movement-model-placeholder">
+              <BilingualText entry={isCountingDown ? instructions.movement.timerMode : instructions.movement.modelComingSoon} />
             </div>
           )}
         </div>

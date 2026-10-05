@@ -53,7 +53,7 @@ vi.mock('./components/QuizCameraPreview', () => ({
 
 function openModeSelection() {
   if (screen.queryByRole('main', { name: 'Welcome' })) {
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
   }
 }
 
@@ -64,7 +64,7 @@ function chooseStanding() {
 
 function startAndCompleteMovementSequence() {
   chooseStanding()
-  fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
   for (let movement = 0; movement < 5; movement += 1) {
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
   }
@@ -120,22 +120,22 @@ describe('Whakakori Together round', () => {
     render(<App />)
 
     expect(screen.getByRole('img', { name: 'A standing older adult' })).toHaveAttribute('src', '/assets/selection-standing.webp')
-    expect(screen.getByText('Camera footage is not recorded or stored')).toBeInTheDocument()
+    expect(screen.getByText(/Camera footage is not recorded or stored/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /choose standing/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Go back' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /go back/i })).not.toBeInTheDocument()
     expect(cameraRenderSpy).not.toHaveBeenCalled()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
+    expect(screen.getByRole('heading', { name: /choose how to move/i })).toBeInTheDocument()
     expect(cameraRenderSpy).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
+    fireEvent.click(screen.getByRole('button', { name: /go back/i }))
     expect(screen.getByRole('main', { name: 'Welcome' })).toBeInTheDocument()
   })
 
   it('keeps the header focused on the tree, points, and records', () => {
     render(<App />)
     const headerStatus = screen.getByRole('banner').querySelector('.header-status')
-    expect(Array.from(headerStatus?.children ?? []).map((element) => element.textContent)).toEqual(['Sapling', 'Points0', 'Records'])
+    expect(Array.from(headerStatus?.children ?? []).map((element) => element.textContent)).toEqual(['Sapling', 'PointsPiha0', 'RecordsRekoata'])
 
     chooseStanding()
     expect(screen.queryByText('Coming up')).not.toBeInTheDocument()
@@ -169,43 +169,43 @@ describe('Whakakori Together round', () => {
 
     openModeSelection()
     const choices = screen.getAllByRole('button', { name: /choose (standing|seated)/i })
-    expect(choices.map((choice) => choice.querySelector('.mode-card-title')?.textContent)).toEqual(['Standing', 'Seated'])
+    expect(choices.map((choice) => choice.querySelector('.mode-card-title .bilingual-primary')?.textContent ?? choice.querySelector('.mode-card-title')?.textContent)).toEqual(['Standing', 'Seated'])
     expect(choices.map((choice) => choice.querySelector('img')?.getAttribute('src'))).toEqual(['/assets/selection-standing.webp', '/assets/selection-seated.webp'])
     expect(cameraRenderSpy).not.toHaveBeenCalled()
 
     fireEvent.click(choices[1])
-    expect(screen.getByRole('heading', { name: 'Seated arm opening' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /seated arm opening/i })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
     expect(cameraRenderSpy).toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
-    expect(screen.getByRole('heading', { name: 'Seated overhead press' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /seated overhead press/i })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Movement camera preview' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
-    expect(screen.getByRole('heading', { name: 'Seated arm reach' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /seated arm reach/i })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 3 of 5')).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Movement camera preview' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
-    expect(screen.getByRole('heading', { name: 'Seated Forward Reach' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /seated forward reach/i })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 4 of 5')).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Movement camera preview' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
-    expect(screen.getByRole('heading', { name: 'Seated torso twist' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /seated torso twist/i })).toBeInTheDocument()
     expect(screen.getByLabelText('Movement 5 of 5')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     finishQuizIntro()
-    expect(screen.getByText('Question 1 of 3')).toBeInTheDocument()
+    expect(screen.getByText(/Question 1 of 3/)).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
     expect(screen.getByRole('main', { name: 'Welcome' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Seated arm reach' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /seated arm reach/i })).not.toBeInTheDocument()
 
     chooseStanding()
     expect(cameraRenderSpy).toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /^Start/i })).toBeEnabled()
   })
 
   it('returns from a completed round to selection and uses the logo to restart', () => {
@@ -214,10 +214,10 @@ describe('Whakakori Together round', () => {
     chooseStanding()
 
     for (let movement = 0; movement < 5; movement += 1) {
-      fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+      fireEvent.click(screen.getByRole('button', { name: /skip/i }))
     }
     finishQuizIntro()
-    expect(screen.getByText('Question 1 of 3')).toBeInTheDocument()
+    expect(screen.getByText(/Question 1 of 3/)).toBeInTheDocument()
 
     for (let question = 0; question < 3; question += 1) {
       const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
@@ -228,15 +228,15 @@ describe('Whakakori Together round', () => {
       act(() => vi.advanceTimersByTime(1_000))
     }
 
-    expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
-    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Go back' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /well done/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /go back/i }))
+    expect(screen.getByRole('heading', { name: /choose how to move/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /go back/i })).not.toBeInTheDocument()
 
     chooseStanding()
     fireEvent.click(screen.getByRole('button', { name: 'Return to start screen' }))
     expect(screen.getByRole('main', { name: 'Welcome' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Go back' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /go back/i })).not.toBeInTheDocument()
 
     chooseStanding()
     expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
@@ -247,11 +247,11 @@ describe('Whakakori Together round', () => {
     render(<App />)
     chooseStanding()
 
-    expect(movementTitles).toContain(screen.getByRole('heading', { level: 1 }).textContent)
-    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Start' }).closest('.movement-action-card')).not.toBeNull()
+    expect(movementTitles.some((title) => screen.getByRole('heading', { level: 1 }).textContent?.includes(title))).toBe(true)
+    expect(screen.getByRole('button', { name: /^Start/i })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /^Start/i }).closest('.movement-action-card')).not.toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
     fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
 
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
@@ -264,10 +264,10 @@ describe('Whakakori Together round', () => {
     render(<App />)
     chooseStanding()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
 
     const recognitionIndicator = screen.getByLabelText('Movement recognised')
-    expect(recognitionIndicator.closest('.movement-progress')).toHaveTextContent('✓Hold0.0/5 S')
+    expect(recognitionIndicator.closest('.movement-progress')).toHaveTextContent(/Hold.*0\.0\/5 S/)
   })
 
   it('skips the current movement and opens the quiz after the fifth skip', () => {
@@ -275,15 +275,15 @@ describe('Whakakori Together round', () => {
     render(<App />)
     chooseStanding()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    fireEvent.click(screen.getByRole('button', { name: /skip/i }))
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
 
     for (let movement = 0; movement < 4; movement += 1) {
-      fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+      fireEvent.click(screen.getByRole('button', { name: /skip/i }))
     }
 
     finishQuizIntro()
-    expect(screen.getByText('Question 1 of 3')).toBeInTheDocument()
+    expect(screen.getByText(/Question 1 of 3/)).toBeInTheDocument()
   })
 
   it('shows the hand guide for three seconds and can reopen it without accepting a gesture', () => {
@@ -291,7 +291,7 @@ describe('Whakakori Together round', () => {
     render(<App />)
     chooseStanding()
     for (let movement = 0; movement < 5; movement += 1) {
-      fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+      fireEvent.click(screen.getByRole('button', { name: /skip/i }))
     }
 
     expect(screen.getByRole('img', { name: /raise your left hand/i })).toHaveAttribute('src', '/assets/quiz-gesture-guide.webp')
@@ -301,9 +301,9 @@ describe('Whakakori Together round', () => {
     act(() => vi.advanceTimersByTime(1))
     expect(screen.getByRole('button', { name: 'Choose A gesture' })).toBeEnabled()
 
-    fireEvent.click(screen.getByRole('button', { name: 'View hand guide' }))
+    fireEvent.click(screen.getByRole('button', { name: /view hand guide/i }))
     expect(screen.getByRole('button', { name: 'Choose A gesture' })).toBeDisabled()
-    fireEvent.click(screen.getByRole('button', { name: 'Close guide' }))
+    fireEvent.click(screen.getByRole('button', { name: /close guide/i }))
     expect(screen.getByRole('button', { name: 'Choose A gesture' })).toBeEnabled()
   })
 
@@ -328,24 +328,24 @@ describe('Whakakori Together round', () => {
     render(<App />)
     chooseStanding()
 
-    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    expect(screen.getByRole('button', { name: /^Start/i })).toBeEnabled()
+    fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
 
-    expect(screen.getByText('Pose recognition unavailable')).toBeInTheDocument()
+    expect(screen.getByText(/Pose recognition unavailable/)).toBeInTheDocument()
     expect(screen.getByText('Camera is unavailable.')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
 
     expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
-    expect(screen.getByText('Next movement in')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    expect(screen.getByText(/Next movement in/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /^Records/i }))
     act(() => vi.advanceTimersByTime(5_000))
     expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
     completeCountdown()
 
     expect(screen.getByLabelText('Movement 2 of 5')).toBeInTheDocument()
     expect(screen.getByLabelText('5 seconds remaining')).toBeInTheDocument()
-    expect(screen.queryByText('Pose recognition unavailable')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Pose recognition unavailable/)).not.toBeInTheDocument()
   })
 
   it('keeps the current movement playing when the participant declines the fallback', () => {
@@ -354,13 +354,13 @@ describe('Whakakori Together round', () => {
     render(<App />)
     chooseStanding()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
     const pausesAfterStart = pause.mock.calls.length
-    fireEvent.click(screen.getByRole('button', { name: 'Not now' }))
+    fireEvent.click(screen.getByRole('button', { name: /not now/i }))
 
-    expect(screen.queryByText('Pose recognition unavailable')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Pose recognition unavailable/)).not.toBeInTheDocument()
     expect(screen.getByLabelText('Movement 1 of 5')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /^Start/i })).toBeEnabled()
     expect(pause).toHaveBeenCalledTimes(pausesAfterStart)
   })
 
@@ -384,7 +384,7 @@ describe('Whakakori Together round', () => {
 
     act(() => vi.advanceTimersByTime(1_000))
 
-    expect(screen.getByText('Question 2 of 3')).toBeInTheDocument()
+    expect(screen.getByText(/Question 2 of 3/)).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(firstQuestion)
     const secondQuestion = screen.getByRole('heading', { level: 1 }).textContent
     const secondCorrectAnswer = quizQuestions.find((quiz) => quiz.question === secondQuestion)?.correctAnswer
@@ -421,24 +421,24 @@ describe('Whakakori Together round', () => {
     vi.useFakeTimers()
     render(<App />)
     completePerfectRound()
-    expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /well done/i })).toBeInTheDocument()
     expect(document.querySelectorAll('.celebration-bursts-result .celebration-burst')).toHaveLength(10)
     expect(screen.getByText(/You answered 3 of 3 questions correctly/)).toBeInTheDocument()
     expect(screen.getByText('Wellbeing Points this round')).toBeInTheDocument()
     expect(screen.getByLabelText('30 Wellbeing Points, Sapling')).toBeInTheDocument()
     expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
-    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Records/i }))
     expect(screen.getAllByText('3 of 3 correct')).toHaveLength(2)
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
     expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
-    fireEvent.click(screen.getByRole('button', { name: 'Play another round' }))
-    expect(screen.getByRole('heading', { name: 'Choose how to move' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /play another round/i }))
+    expect(screen.getByRole('heading', { name: /choose how to move/i })).toBeInTheDocument()
     expect(screen.getByLabelText('30 Wellbeing Points, Sapling')).toBeInTheDocument()
     completePerfectRound()
     expect(screen.getByLabelText('60 Wellbeing Points, Sapling')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Play another round' }))
+    fireEvent.click(screen.getByRole('button', { name: /play another round/i }))
     completePerfectRound()
-    fireEvent.click(screen.getByRole('button', { name: 'Play another round' }))
+    fireEvent.click(screen.getByRole('button', { name: /play another round/i }))
     completePerfectRound()
     expect(screen.getByLabelText('120 Wellbeing Points, Tree')).toBeInTheDocument()
     expect(screen.getByAltText('Tree wellbeing tree')).toHaveAttribute('src', '/assets/tree-medium.webp')
@@ -452,13 +452,13 @@ describe('Whakakori Together round', () => {
     cleanup()
     render(<App />)
     expect(screen.getByLabelText('30 Wellbeing Points, Sapling')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Records/i }))
     expect(screen.getByText('3 of 3 correct')).toBeInTheDocument()
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
-    fireEvent.click(screen.getByRole('button', { name: 'Clear all records' }))
+    fireEvent.click(screen.getByRole('button', { name: /clear all records/i }))
     expect(JSON.parse(window.localStorage.getItem(scoreHistoryKey) ?? '[]')).toHaveLength(1)
     confirm.mockReturnValue(true)
-    fireEvent.click(screen.getByRole('button', { name: 'Clear all records' }))
+    fireEvent.click(screen.getByRole('button', { name: /clear all records/i }))
     expect(window.localStorage.getItem(scoreHistoryKey)).toBeNull()
     expect(screen.getByLabelText('0 Wellbeing Points, Sapling')).toBeInTheDocument()
     expect(screen.getByText('No saved rounds yet.')).toBeInTheDocument()
@@ -471,7 +471,7 @@ describe('Whakakori Together round', () => {
     render(<App />)
 
     expect(screen.getByLabelText('50 Wellbeing Points, Sapling')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Records/i }))
     expect(screen.getByText('5 of 5 correct')).toBeInTheDocument()
   })
 
@@ -479,19 +479,19 @@ describe('Whakakori Together round', () => {
     vi.useFakeTimers()
     render(<App />)
     chooseStanding()
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Start/i }))
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
-    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Records/i }))
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeDisabled()
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
     expect(screen.getByRole('button', { name: 'Complete recognized movement' })).toBeEnabled()
     for (let movement = 0; movement < 5; movement += 1) {
       fireEvent.click(screen.getByRole('button', { name: 'Complete recognized movement' }))
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Records/i }))
     act(() => vi.advanceTimersByTime(5_000))
     expect(screen.getByRole('region', { name: 'Hand choice guide' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
     finishQuizIntro()
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
   })
@@ -501,8 +501,8 @@ describe('Whakakori Together round', () => {
     render(<App />)
     completePerfectRound()
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    fireEvent.click(screen.getByRole('button', { name: 'Clear all records' }))
-    expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /clear all records/i }))
+    expect(screen.getByRole('heading', { name: /well done/i })).toBeInTheDocument()
     expect(screen.getByText('Wellbeing Points this round')).toBeInTheDocument()
     expect(screen.getByLabelText('0 Wellbeing Points, Sapling')).toBeInTheDocument()
     expect(screen.getByText('No saved rounds yet.')).toBeInTheDocument()
@@ -517,10 +517,10 @@ describe('Whakakori Together round', () => {
     const questionText = screen.getByRole('heading', { level: 1 }).textContent ?? ''
     const correctAnswer = quizQuestions.find((quiz) => quiz.question === questionText)?.correctAnswer
     fireEvent.click(answerButton(correctAnswer ?? '')!)
-    fireEvent.click(screen.getByRole('button', { name: 'Records' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Records/i }))
     act(() => vi.advanceTimersByTime(5_000))
     expect(screen.getByRole('heading', { name: questionText })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
     act(() => vi.advanceTimersByTime(1_000))
     expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(questionText)
   })
@@ -531,6 +531,6 @@ describe('Whakakori Together round', () => {
     render(<App />)
     completePerfectRound()
     expect(screen.getByRole('status')).toHaveTextContent('Scores could not be saved on this device.')
-    expect(screen.getByRole('heading', { name: 'Well done!' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /well done/i })).toBeInTheDocument()
   })
 })

@@ -4,6 +4,8 @@ import type { QuizQuestion } from '../game'
 import type { QuizChoice } from '../quizRecognition'
 import { CelebrationBursts } from './CelebrationBursts'
 import { QuizCameraPreview } from './QuizCameraPreview'
+import { formatBilingual, instructions } from '../bilingual'
+import { BilingualText } from './BilingualText'
 
 type QuizScreenProps = {
   answerOrder: string[]
@@ -36,20 +38,30 @@ export function QuizScreen({ answerOrder, quiz, currentQuestion, totalQuestions,
         {guideVisible ? (
           <div className="quiz-guide">
             <div className="quiz-guide-image-wrap">
-              <img alt="Raise your left hand to choose A, or your right hand to choose B." src="/assets/quiz-gesture-guide.webp" />
+              <img alt={formatBilingual(instructions.quiz.guideAlt)} src="/assets/quiz-gesture-guide.webp" />
               {isIntroVisible && !isReplayingGuide ? <span aria-label={`${introSecondsRemaining} second${introSecondsRemaining === 1 ? '' : 's'} until quiz`} aria-live="polite" className="quiz-guide-countdown">{introSecondsRemaining}</span> : null}
             </div>
-            <p className="quiz-guide-caption">Left hand: A · Right hand: B</p>
-            {isReplayingGuide ? <Button className="quiz-guide-close" disabled={isPaused} htmlType="button" size="large" onClick={() => setIsReplayingGuide(false)}>Close guide</Button> : null}
+            <p className="quiz-guide-caption">
+              <BilingualText entry={instructions.quiz.guideCaption} />
+            </p>
+            {isReplayingGuide ? (
+              <Button className="quiz-guide-close" disabled={isPaused} htmlType="button" size="large" onClick={() => setIsReplayingGuide(false)}>
+                <BilingualText entry={instructions.quiz.closeGuide} />
+              </Button>
+            ) : null}
           </div>
         ) : (
           <>
             <div className="quiz-question-heading">
-              <span className="movement-index">Question {currentQuestion} of {totalQuestions}</span>
+              <span className="movement-index">
+                <BilingualText entry={instructions.quiz.questionCount(currentQuestion, totalQuestions)} />
+              </span>
               <Button disabled={isPaused} htmlType="button" size="large" onClick={() => {
                 setHasReplayedGuide(true)
                 setIsReplayingGuide(true)
-              }}>View hand guide</Button>
+              }}>
+                <BilingualText entry={instructions.quiz.viewGuide} />
+              </Button>
             </div>
             <div className="quiz-question-body">
               <img alt={quiz.image?.alt ?? ''} className="quiz-illustration" src={quiz.image?.src} />

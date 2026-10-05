@@ -127,7 +127,7 @@ describe('QuizCameraPreview', () => {
     const video = screen.getByLabelText('Live quiz camera preview')
     await waitFor(() => expect((video as HTMLVideoElement).srcObject).not.toBeNull())
     fireEvent.playing(video)
-    expect(await screen.findByText('Quiz gesture model is invalid. Choose A or B on screen.')).toBeInTheDocument()
+    expect(await screen.findByText(/Quiz gesture model is invalid/i)).toBeInTheDocument()
     expect(dispose).toHaveBeenCalledOnce()
   })
 })
