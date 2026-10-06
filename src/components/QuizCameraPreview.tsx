@@ -3,6 +3,8 @@ import { drawInferenceFrame, inferenceFrameSize } from '../cameraFrame'
 import { usePoseCamera, type PoseCameraStatus } from '../usePoseCamera'
 import { createQuizGestureTracker, type QuizChoice } from '../quizRecognition'
 import { usePoseModel } from '../usePoseModel'
+import { formatBilingual, instructions } from '../bilingual'
+import { BilingualText } from './BilingualText'
 
 type QuizCameraPreviewProps = {
   isActive: boolean
@@ -21,11 +23,11 @@ const hasRequiredLabels = (labels: string[]) => labels.length === requiredLabels
 
 function getCameraMessage(status: PoseCameraStatus) {
   switch (status) {
-    case 'denied': return 'Camera permission was not granted. Choose A or B on screen.'
-    case 'disconnected': return 'Camera disconnected. Choose A or B on screen.'
-    case 'paused': return 'Camera paused. Choose A or B on screen.'
-    case 'unavailable': return 'Camera unavailable. Choose A or B on screen.'
-    default: return ''
+    case 'denied': return instructions.quiz.cameraPermissionDenied
+    case 'disconnected': return instructions.quiz.cameraDisconnected
+    case 'paused': return instructions.quiz.cameraPaused
+    case 'unavailable': return instructions.quiz.cameraUnavailable
+    default: return null
   }
 }
 
@@ -40,12 +42,17 @@ export function QuizCameraPreview({ isActive, isPaused = false, questionKey, wai
   const [waitingForIdle, setWaitingForIdle] = useState(waitForIdle)
   onChoiceRef.current = onChoice
   const cameraMessage = getCameraMessage(cameraStatus)
-  const modelMessage = modelStatus === 'invalid' ? 'Quiz gesture model is invalid. Choose A or B on screen.'
-    : modelStatus === 'error' ? 'Quiz gesture model could not load. Choose A or B on screen.'
-      : recognitionError ? 'Gesture recognition stopped. Choose A or B on screen.' : ''
-  const status = cameraMessage || modelMessage ? 'unavailable' : cameraStatus === 'ready' && modelStatus === 'ready' ? 'ready' : 'loading'
-  const message = cameraMessage || modelMessage
+  const modelMessage = modelStatus === 'invalid'
+    ? instructions.quiz.modelInvalid
+    : modelStatus === 'error'
+      ? instructions.quiz.modelError
+      : recognitionError
+        ? instructions.quiz.recognitionStopped
+        : null
+  const messageEntry = cameraMessage || modelMessage
+  const status = messageEntry ? 'unavailable' : cameraStatus === 'ready' && modelStatus === 'ready' ? 'ready' : 'loading'
   const canRecognize = isActive && !isPaused && status === 'ready'
+
   useEffect(() => {
     if (!isActive) {
       trackerRef.current = null
@@ -103,24 +110,26 @@ export function QuizCameraPreview({ isActive, isPaused = false, questionKey, wai
     }
   }, [canRecognize, isActive, questionKey, waitForIdle])
 
-  const statusText = status === 'unavailable'
-    ? message
+  const statusEntry = status === 'unavailable'
+    ? messageEntry
     : status === 'loading'
-      ? 'Starting camera and gesture model…'
+      ? instructions.quiz.starting
       : isPaused
-        ? 'Hand choices are paused while viewing records.'
+        ? instructions.quiz.pausedRecords
       : !isActive
-        ? 'Hand choices pause while the guide or answer is shown.'
+        ? instructions.quiz.pausedGuide
         : waitingForIdle
-          ? 'Lower your hand to choose again.'
-          : ''
+          ? instructions.quiz.lowerHand
+          : null
+
+  const statusText = statusEntry ? formatBilingual(statusEntry) : ''
 
   return (
     <section aria-label="Quiz camera preview" className="movement-camera-card">
       <div className="movement-camera-heading">
         <div aria-live="polite" className="movement-progress">
           {canRecognize && isActive ? <span aria-label={holdMs > 0 ? 'Gesture recognised' : 'Gesture not recognised'} className={`movement-recognition-indicator${holdMs > 0 ? ' movement-recognition-indicator-success' : ''}`}>{holdMs > 0 ? '✓' : '×'}</span> : null}
-          <span>Hold</span>
+          <span><BilingualText entry={instructions.movement.hold} /></span>
           <strong>{(holdMs / 1_000).toFixed(1)}/2 S</strong>
         </div>
       </div>

@@ -31,13 +31,16 @@ For focused round and recognition checks, run `pnpm exec vitest run src/App.test
 - `src/poseRecognition.ts` and `src/quizRecognition.ts`: confidence threshold, cumulative recognition timers, and quiz gesture choice.
 - `src/usePoseCamera.ts` and `src/usePoseModel.ts`: shared camera-track and pose-model loading, status, and cleanup for both previews.
 - `src/cameraFrame.ts`: the shared mirrored, centred 257 × 257 inference input.
+- `src/bilingual.ts`: centralized bilingual English and Māori translations and instruction dictionaries.
+- `src/components/BilingualText.tsx`: reusable stacked two-line English and Māori component with distinct typographic hierarchy.
 - `src/components/`: header, movement-style selection, movement, camera, quiz, and result presentation.
-- `src/styles.css`: responsive styling layered over `animal-island-ui/style`.
+- `src/styles.css`: responsive styling layered over `animal-island-ui/style`, including stacked bilingual typography.
 - `src/**/*.test.ts(x)` and `src/test/setup.ts`: Vitest and Testing Library regression coverage.
 - `public/assets/`, `public/models/`, `public/vendor/`: served media, movement classifiers, and legacy browser runtimes.
 
 ## Interaction and accessibility
 
+- Instructions, headings, button actions, status indicators, and modal prompts are presented in an accessible **stacked two-line bilingual format** (English primary line with Te Reo Māori secondary line directly underneath in a dedicated, softer typographic hierarchy). This stacked layout follows Aotearoa New Zealand public signage and accessibility practices, maximizing readability and eliminating visual clutter or confusion for older adults.
 - The welcome screen uses one centred card with the same border as the movement-style cards. The screen shares the movement-style selection background, while the card shares the standing illustration’s grey background. The instruction **Move along with the character** appears to the left of the existing standing character above **Start** and the privacy notice **Camera footage is not recorded or stored**. Camera access and pose model loading begin only after a movement style is selected. **Start** opens the movement-style selection screen, which uses two illustrated cards: **Standing** on the left and **Seated** on the right, stacked on mobile. Choosing either option opens a five-movement round in random order, followed by three distinct questions randomly selected from the ten-question quiz bank. Seated movements are torso twist, arm opening, overhead press, arm reach, and forward reach.
 - The header shows **Go back** after navigating away from welcome and returns through visited screens. From the completed result, **Go back** returns to selection. Select the **Whakakori Together** logo at any time to reset the round and return to the welcome screen. The tree stage, **Points**, and **Records** sit together in the header, with **Records** to the right of **Points**; the quiz progress appears on the quiz screen instead of in the header. **Records** opens saved score history from any screen; active timers and recognition pause until it closes.
 - Each round opens on a movement video. Select **Start** to begin playback and recognition. Movements with a model complete after five seconds of cumulative recognition at 70% confidence; gaps longer than 300 milliseconds pause the timer without clearing progress. **Skip** remains available for every movement.

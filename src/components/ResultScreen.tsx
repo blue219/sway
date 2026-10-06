@@ -3,6 +3,8 @@ import type { TreeStage } from '../game'
 import type { ScoreRecord } from '../scoreHistory'
 import { CelebrationBursts } from './CelebrationBursts'
 import { ScoreRecordList } from './ScoreRecordList'
+import { instructions } from '../bilingual'
+import { BilingualText } from './BilingualText'
 
 type ResultScreenProps = {
   correctAnswers: number
@@ -21,8 +23,12 @@ export function ResultScreen({ correctAnswers, totalQuestions, points, totalPoin
       <CelebrationBursts variant="result" />
       <Card className="result-panel" color="app-pink" pattern="app-pink" aria-labelledby="result-title">
         <div className="result-copy">
-          <p className="result-eyebrow">Round complete</p>
-          <h1 id="result-title">Well done!</h1>
+          <p className="result-eyebrow">
+            <BilingualText entry={instructions.result.eyebrow} />
+          </p>
+          <h1 id="result-title">
+            <BilingualText entry={instructions.result.title} />
+          </h1>
           <p className="result-message">You answered {correctAnswers} of {totalQuestions} questions correctly.</p>
           <p className="points-earned">+{points} <span>Wellbeing Points this round</span></p>
           <div className="result-total">
@@ -37,14 +43,20 @@ export function ResultScreen({ correctAnswers, totalQuestions, points, totalPoin
       </Card>
       <Card className="record-panel" color="app-green" pattern="app-green" aria-labelledby="record-title">
         <div className="record-heading">
-          <h2 id="record-title">Score history</h2>
-          {records.length > 0 ? <button className="text-link" type="button" onClick={onClearRecords}>Clear all records</button> : null}
+          <h2 id="record-title">
+            <BilingualText entry={instructions.result.historyTitle} />
+          </h2>
+          {records.length > 0 ? (
+            <button className="text-link" type="button" onClick={onClearRecords}>
+              <BilingualText entry={instructions.result.clearAll} />
+            </button>
+          ) : null}
         </div>
         <ScoreRecordList records={records} />
       </Card>
       <div className="result-actions">
         <Button className="primary-action" htmlType="button" size="large" type="primary" onClick={onPlayAgain}>
-          Play another round
+          <BilingualText entry={instructions.result.playAgain} />
         </Button>
       </div>
     </main>

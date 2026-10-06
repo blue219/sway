@@ -198,3 +198,213 @@ h2 { margin-bottom: 10px; font-size: clamp(1.45rem, 2.3vw, 2.15rem); line-height
 @media (max-width: 720px) { .quiz-question-body h1 { font-size: clamp(2.5rem, 8vw, 3.2rem); } .quiz-answer-button { min-height: 104px; padding: 12px; font-size: clamp(1.7rem, 6vw, 2.2rem); } .quiz-answer-button strong { width: 54px; height: 54px; } }
 @media (min-width: 721px) and (max-width: 900px), (max-width: 480px) { .quiz-answer-options { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } .celebration-bursts { display: none; } }
+
+/* Stacked Bilingual (Two-Line) Typography */
+.bilingual-stacked {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+  text-align: center;
+  gap: 2px;
+}
+.bilingual-stacked.align-left {
+  align-items: flex-start;
+  text-align: left;
+}
+.bilingual-primary {
+  display: block;
+  font-weight: inherit;
+  line-height: inherit;
+}
+.bilingual-secondary {
+  display: block;
+  font-size: 0.74em;
+  font-weight: 600;
+  opacity: 0.88;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+/* Screen and component adjustments for stacked bilingual text */
+.welcome-instruction .bilingual-stacked {
+  align-items: flex-start;
+  text-align: left;
+  gap: 6px;
+}
+.welcome-instruction .bilingual-secondary {
+  font-size: 0.62em;
+  font-weight: 600;
+  color: #5c4b37;
+  letter-spacing: 0;
+}
+.welcome-start-button {
+  min-height: 64px;
+  width: min(300px, 100%);
+}
+.welcome-start-button .bilingual-secondary {
+  font-size: 0.76em;
+  font-weight: 700;
+}
+.welcome-privacy .bilingual-stacked {
+  gap: 3px;
+}
+.welcome-privacy .bilingual-secondary {
+  font-size: 0.88em;
+  opacity: 0.85;
+}
+
+.mode-selection-title .bilingual-stacked {
+  gap: 6px;
+}
+.mode-selection-title .bilingual-secondary {
+  font-size: 0.6em;
+  font-weight: 600;
+  color: #5c4b37;
+}
+.mode-card-title .bilingual-stacked {
+  gap: 4px;
+}
+.mode-card-title .bilingual-secondary {
+  font-size: 0.68em;
+  font-weight: 700;
+  color: #5c4b37;
+}
+.mode-card-action {
+  min-height: 64px;
+}
+.mode-card-action .bilingual-secondary {
+  font-size: 0.8em;
+  font-weight: 700;
+}
+
+.movement-introduction h1 .bilingual-stacked {
+  align-items: flex-start;
+  text-align: left;
+  gap: 3px;
+}
+.movement-introduction h1 .bilingual-secondary {
+  font-size: 0.62em;
+  font-weight: 600;
+  color: #43544c;
+  letter-spacing: -0.01em;
+}
+.start-movement-button {
+  min-height: 54px;
+  width: clamp(120px, 13vw, 170px);
+}
+.start-movement-button .bilingual-secondary {
+  font-size: 0.76em;
+  font-weight: 700;
+}
+.skip-movement-button {
+  min-height: 54px;
+  padding-inline: 18px !important;
+}
+.skip-movement-button .bilingual-secondary {
+  font-size: 0.76em;
+  font-weight: 700;
+}
+
+.header-back-button {
+  min-height: 48px;
+}
+.header-back-button .bilingual-secondary {
+  font-size: 0.75em;
+  font-weight: 700;
+}
+.header-records-link {
+  min-height: 48px;
+}
+.header-records-link .bilingual-secondary {
+  font-size: 0.75em;
+  font-weight: 700;
+}
+.status-card .status-label .bilingual-stacked {
+  align-items: flex-start;
+}
+.status-card .status-label .bilingual-secondary {
+  font-size: 0.85em;
+}
+
+.movement-progress .bilingual-stacked {
+  align-items: flex-start;
+  line-height: 1;
+}
+.movement-progress .bilingual-secondary {
+  font-size: 0.65em;
+  font-weight: 700;
+  color: #2e6245;
+}
+
+.quiz-question-heading button {
+  min-height: 52px;
+}
+.quiz-question-heading button .bilingual-secondary {
+  font-size: 0.76em;
+  font-weight: 700;
+}
+.quiz-question-heading .movement-index .bilingual-stacked {
+  gap: 2px;
+}
+.quiz-question-heading .movement-index .bilingual-secondary {
+  font-size: 0.76em;
+  font-weight: 700;
+}
+.quiz-guide-caption .bilingual-stacked {
+  gap: 3px;
+}
+.quiz-guide-caption .bilingual-secondary {
+  font-size: 0.8em;
+  font-weight: 700;
+}
+
+.result-eyebrow .bilingual-stacked {
+  align-items: flex-start;
+}
+.result-eyebrow .bilingual-secondary {
+  font-size: 0.85em;
+  letter-spacing: 0.04em;
+}
+.result-copy h1 .bilingual-stacked {
+  align-items: flex-start;
+}
+.result-copy h1 .bilingual-secondary {
+  font-size: 0.65em;
+  font-weight: 600;
+  color: #7d4455;
+}
+.record-heading h2 .bilingual-stacked {
+  align-items: flex-start;
+}
+.record-heading h2 .bilingual-secondary {
+  font-size: 0.7em;
+  font-weight: 600;
+  color: #4a5a52;
+}
+.result-actions .primary-action {
+  min-height: 64px;
+}
+.result-actions .primary-action .bilingual-secondary {
+  font-size: 0.78em;
+  font-weight: 700;
+}
+
+.fallback-dialog-copy .bilingual-stacked {
+  align-items: flex-start;
+  text-align: left;
+  gap: 3px;
+}
+.fallback-dialog-copy .bilingual-secondary {
+  font-size: 0.88em;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.dialog-actions button {
+  min-height: 52px;
+}
+.dialog-actions button .bilingual-secondary {
+  font-size: 0.76em;
+  font-weight: 700;
+}
